@@ -1,101 +1,225 @@
-import Image from "next/image";
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Image from 'next/image'
+import { useState } from 'react'
+import Link from 'next/link'
+import { client, urlFor } from '@/lib/sanity'
+import ContactForm from '@/components/ContactForm'
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+interface Course {
+  _id: string
+  title: string
+  description: string
+  slug: { current: string }
+  courseImage: any
 }
+
+interface Instructor {
+  _id: string
+  name: string
+  title: string
+  bio: string
+  image: any
+}
+
+interface Testimonial {
+  _id: string
+  name: string
+  role: string
+  content: string
+  image: any
+}
+
+export default async function Home() {
+  // Fetch data from Sanity
+  const courses = await client.fetch<Course[]>(`
+    *[_type == "course"][0...5] {
+      _id,
+      title,
+      description,
+      slug,
+      courseImage
+    }
+  `)
+
+  const instructors = await client.fetch<Instructor[]>(`
+    *[_type == "instructor"] {
+      _id,
+      name,
+      title,
+      bio,
+      image
+    }
+  `)
+
+  const testimonials = await client.fetch<Testimonial[]>(`
+    *[_type == "testimonial"] {
+      _id,
+      name,
+      role,
+      content,
+      image
+    }
+  `)
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white py-24">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="font-heading text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+            Welcome to The School of Encounter
+          </h1>
+          <p className="text-xl md:text-2xl mb-12 text-blue-100">
+            Equipping you for spiritual growth and kingdom impact
+          </p>
+          <Link 
+            href="/courses" 
+            className="inline-block px-8 py-4 bg-white text-blue-700 rounded-lg font-semibold 
+                     hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 
+                     shadow-lg hover:shadow-xl"
+          >
+            Explore Courses
+          </Link>
+        </div>
+      </section>
+
+      {/* Featured Courses Section */}
+      <section className="py-20 bg-gradient-to-b from-slate-50 to-slate-100">
+        <div className="container mx-auto px-4">
+          <h2 className="font-heading text-3xl font-bold text-center mb-12">
+            Featured Courses
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {courses.map((course) => (
+              <div 
+                key={course._id} 
+                className="relative bg-white/70 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden h-[300px]
+                          transform transition-all duration-300 ease-in-out
+                          hover:scale-[1.02] hover:shadow-2xl
+                          group"
+                style={{
+                  backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url(${urlFor(course.courseImage).url()})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                <div className="absolute inset-0 p-6 flex flex-col justify-between
+                                transition-all duration-300 ease-in-out
+                                bg-black/20 group-hover:bg-black/10">
+                  <h3 className="text-xl font-bold text-white
+                                 transform transition-all duration-300
+                                 group-hover:scale-105 group-hover:translate-y-2
+                                 text-shadow-lg">
+                    {course.title}
+                  </h3>
+                  <p className="text-gray-100 mb-6 
+                                opacity-0 transform translate-y-4
+                                transition-all duration-300 ease-in-out
+                                group-hover:opacity-100 group-hover:translate-y-0
+                                text-shadow">
+                    {course.description}
+                  </p>
+                  <Link 
+                    href={`/courses/${course.slug.current}`}
+                    className="inline-block w-full text-center py-3 
+                               bg-gradient-to-r from-blue-600 to-indigo-600 
+                               text-white rounded-lg
+                               transform transition-all duration-300
+                               hover:from-blue-700 hover:to-indigo-700
+                               hover:scale-[1.02] hover:shadow-lg
+                               opacity-90 group-hover:opacity-100"
+                  >
+                    Learn More
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-8 text-center">What Our Students Say</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {testimonials.map((testimonial) => (
+              <Card key={testimonial._id} className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <CardHeader className="flex flex-col items-center">
+                  {testimonial.image && (
+                    <Image
+                      src={urlFor(testimonial.image).width(100).height(100).url()}
+                      alt={`${testimonial.name}'s profile picture`}
+                      width={100}
+                      height={100}
+                      className="rounded-full mb-4"
+                    />
+                  )}
+                  <CardTitle className="text-[#003ab8] text-center">{testimonial.name}</CardTitle>
+                  <p className="text-gray-600 text-center">{testimonial.role}</p>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 text-center">{testimonial.content}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Instructors Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-8 text-center">Our Expert Teachers</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {instructors.map((instructor) => (
+              <div key={instructor._id} className="relative group">
+                <Card className="transition-all duration-300 hover:shadow-lg overflow-hidden">
+                  <CardHeader className="flex flex-col items-center">
+                    {instructor.image && (
+                      <Image
+                        src={urlFor(instructor.image).width(200).height(200).url()}
+                        alt={`${instructor.name}'s profile picture`}
+                        width={200}
+                        height={200}
+                        className="rounded-full mb-4"
+                      />
+                    )}
+                    <CardTitle className="text-[#003ab8] text-center">{instructor.name}</CardTitle>
+                    <p className="text-gray-600 text-center">{instructor.title}</p>
+                  </CardHeader>
+                  <CardContent className="absolute inset-0 bg-[#003ab8] bg-opacity-90 text-white p-4 
+                                        flex items-center justify-center opacity-0 group-hover:opacity-100 
+                                        transition-opacity duration-300">
+                    <p className="text-center line-clamp-6 text-sm">
+                      {instructor.bio}
+                      {instructor.bio && instructor.bio.length > 150 && (
+                        <Link 
+                          href={`/instructors/${instructor._id}`} 
+                          className="block mt-2 underline hover:text-blue-200"
+                        >
+                          Read full bio
+                        </Link>
+                      )}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-8 text-center text-[#003ab8]">Contact Us</h2>
+          <ContactForm />
+        </div>
+      </section>
+    </div>
+  )
+}
+
