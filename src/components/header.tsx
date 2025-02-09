@@ -1,9 +1,19 @@
 'use client'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const { user, logout } = useAuth()
+  const router = useRouter()
+
+  const handleDashboardClick = () => {
+    if (user?.role === 'teacher') {
+      router.push('/teacher-dashboard')
+    } else {
+      router.push('/dashboard')
+    }
+  }
 
   return (
     <header className="bg-white shadow-md">
@@ -25,8 +35,18 @@ export default function Header() {
           <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-4">
             {user ? (
               <>
-                <Link href={user.role === 'instructor' ? '/teacher-dashboard' : '/dashboard'} 
-                      className="text-gray-900 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                {user.role === 'teacher' && (
+                  <Link 
+                    href="/teacher-dashboard"
+                    className="text-gray-900 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Instructor Dashboard
+                  </Link>
+                )}
+                <Link 
+                  href="/dashboard"
+                  className="text-gray-900 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                >
                   Dashboard
                 </Link>
                 <button
@@ -38,12 +58,16 @@ export default function Header() {
               </>
             ) : (
               <>
-                <Link href="/auth/login" 
-                      className="text-gray-900 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">
+                <Link 
+                  href="/auth/login"
+                  className="text-gray-900 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+                >
                   Login
                 </Link>
-                <Link href="/auth/signup"
-                      className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium">
+                <Link 
+                  href="/auth/signup"
+                  className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
+                >
                   Sign up
                 </Link>
               </>

@@ -14,6 +14,11 @@ export default {
       type: 'string'
     },
     {
+      name: 'firebaseUID',
+      title: 'Firebase UID',
+      type: 'string'
+    },
+    {
       name: 'bio',
       title: 'Bio',
       type: 'text'

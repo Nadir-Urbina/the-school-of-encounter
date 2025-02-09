@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { client } from '@/lib/sanity'
@@ -51,84 +51,61 @@ function getYouTubeEmbedUrl(url: string) {
 export default function CourseLearnPage({ 
   params 
 }: { 
-  params: { courseId: string } 
+  params: Promise<{ courseId: string }>
 }) {
+  const resolvedParams = use(params)
+  const courseId = resolvedParams.courseId
   const { user, loading } = useAuth()
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null)
   const [loadingCourse, setLoadingCourse] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // Add state for mobile menu visibility
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
-    async function loadCourse() {
-      if (!user?.uid) return
+    if (loading) return
+    if (!user) {
+      router.replace('/auth/login')
+      return
+    }
 
+    async function loadCourse() {
       try {
-        const [courseData, userProfile]: [Course, UserProfile] = await Promise.all([
-          client.fetch(`
-            *[_type == "course" && _id == $courseId][0] {
+        const courseData = await client.fetch(`
+          *[_type == "course" && _id == $courseId][0] {
+            _id,
+            title,
+            "modules": modules[]-> {
               _id,
               title,
-              "modules": modules[]-> {
+              "lessons": lessons[]-> {
                 _id,
                 title,
-                "lessons": lessons[]-> {
-                  _id,
-                  title,
-                  description,
-                  videoId,
-                  duration,
-                  content
-                }
+                description,
+                videoId,
+                duration,
+                content
               }
             }
-          `, { courseId: params.courseId }),
-          client.fetch(`
-            *[_type == "userProfile" && firebaseUID == $uid][0] {
-              "isEnrolled": count(enrolledCourses[references($courseId)]) > 0
-            }
-          `, { 
-            uid: user.uid,
-            courseId: params.courseId
-          })
-        ])
+          }
+        `, { courseId: resolvedParams.courseId })
 
-        if (!courseData) {
-          setError('Course not found')
-          return
-        }
-
-        if (!userProfile?.isEnrolled) {
-          router.replace(`/courses/${params.courseId}`)
-          return
-        }
-
-        setCourse(courseData)
-        
-        // Set first lesson as current if no lesson is selected
-        if (!currentLesson && courseData.modules[0]?.lessons[0]) {
-          setCurrentLesson(courseData.modules[0].lessons[0])
+        if (courseData) {
+          setCourse(courseData)
+          if (!currentLesson && courseData.modules[0]?.lessons[0]) {
+            setCurrentLesson(courseData.modules[0].lessons[0])
+          }
         }
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'An error occurred')
         console.error('Error loading course:', error)
       } finally {
         setLoadingCourse(false)
       }
     }
 
-    if (!loading) {
-      if (!user) {
-        router.replace('/auth/login')
-      } else {
-        loadCourse()
-      }
-    }
-  }, [params.courseId, user, loading, router, currentLesson])
+    loadCourse()
+  }, [resolvedParams.courseId, user, loading, router, currentLesson])
 
   if (loading || loadingCourse) {
     return (
