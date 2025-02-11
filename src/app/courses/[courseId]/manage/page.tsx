@@ -10,7 +10,13 @@ import Link from 'next/link'
 interface Course {
   _id: string
   title: string
-  courseImage: any
+  courseImage: {
+    _type: string
+    asset: {
+      _ref: string
+      _type: string
+    }
+  }
   description: string
   modules: Array<{
     _id: string
