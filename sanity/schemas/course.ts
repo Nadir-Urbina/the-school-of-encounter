@@ -46,6 +46,23 @@ export default {
       title: 'Modules',
       type: 'array',
       of: [{ type: 'reference', to: [{ type: 'module' }] }]
+    },
+    {
+      name: 'rating',
+      title: 'Rating',
+      type: 'number',
+      validation: (Rule: Rule) => Rule
+        .min(0)
+        .max(5)
+        .precision(1) // Allows one decimal place
+    },
+    {
+      name: 'totalStudents',
+      title: 'Total Students',
+      type: 'number',
+      validation: (Rule: Rule) => Rule
+        .min(0)
+        .integer() // Only whole numbers
     }
   ]
 } 
