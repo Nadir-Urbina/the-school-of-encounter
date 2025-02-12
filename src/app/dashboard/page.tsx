@@ -1,16 +1,56 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getUserProfile } from '@/lib/user'
 import Image from 'next/image'
 import { urlFor } from '@/lib/sanity'
+import Link from 'next/link'
+import { client } from '@/lib/sanity'
+
+async function getUserCourses(userId: string) {
+  // First get the user's enrolled courses
+  const userDoc = await client.fetch(`
+    *[_type == "userProfile" && firebaseUID == $userId][0] {
+      "enrolledCourses": enrolledCourses[]-> {
+        _id,
+        title,
+        description,
+        courseImage,
+        progress
+      }
+    }
+  `, { userId })
+
+  // Then get all available courses
+  const allCourses = await client.fetch(`
+    *[_type == "course"] {
+      _id,
+      title,
+      description,
+      courseImage
+    }
+  `)
+
+  // Filter out enrolled courses from available courses
+  const enrolledIds = userDoc?.enrolledCourses?.map((course: { _id: string }) => course._id) || []
+  const availableCourses = allCourses.filter((course: { _id: string }) => !enrolledIds.includes(course._id))
+
+  return {
+    enrolledCourses: userDoc?.enrolledCourses || [],
+    availableCourses
+  }
+}
 
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<any>(null)
   const [loadingProfile, setLoadingProfile] = useState(true)
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([])
+  const [loadingCourses, setLoadingCourses] = useState(true)
+  const [availableCourses, setAvailableCourses] = useState<any[]>([])
+  const [enrolling, setEnrolling] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
@@ -35,6 +75,51 @@ export default function DashboardPage() {
     }
   }, [user, loading, router])
 
+  useEffect(() => {
+    async function loadCourses() {
+      if (user?.uid) {
+        try {
+          const courses = await getUserCourses(user.uid)
+          setEnrolledCourses(courses.enrolledCourses)
+          setAvailableCourses(courses.availableCourses)
+        } catch (error) {
+          console.error('Error loading courses:', error)
+        } finally {
+          setLoadingCourses(false)
+        }
+      }
+    }
+
+    if (!loading) {
+      if (!user) {
+        router.replace('/auth/login')
+      } else {
+        loadCourses()
+      }
+    }
+  }, [user, loading, router])
+
+  const handleEnroll = async (courseId: string) => {
+    setEnrolling(courseId)
+    try {
+      // Add the course reference to the user's enrolledCourses array
+      await client
+        .patch(user!.uid)
+        .setIfMissing({ enrolledCourses: [] })
+        .append('enrolledCourses', [{ _ref: courseId, _type: 'reference' }])
+        .commit()
+
+      // Refresh the courses lists
+      const courses = await getUserCourses(user!.uid)
+      setEnrolledCourses(courses.enrolledCourses)
+      setAvailableCourses(courses.availableCourses)
+    } catch (error) {
+      console.error('Error enrolling in course:', error)
+    } finally {
+      setEnrolling(null)
+    }
+  }
+
   if (loading || loadingProfile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -56,84 +141,150 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Welcome Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {profile.name}!
+        <div className="mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Welcome back, {profile?.name || 'Student'}!
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-sm sm:text-base text-gray-600">
             Continue your learning journey
           </p>
         </div>
 
-        {/* Enrolled Courses */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Your Courses</h2>
-          {profile.enrolledCourses?.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {profile.enrolledCourses.map((course: any) => (
-                <div key={course._id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                  {course.courseImage && (
-                    <div className="relative h-48">
+        {/* Enrolled Courses Section */}
+        <div className="mb-12">
+          <h2 className="text-xl sm:text-2xl font-semibold mb-6">Your Courses</h2>
+          {loadingCourses ? (
+            <div className="text-center py-8">
+              <p>Loading your courses...</p>
+            </div>
+          ) : enrolledCourses.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {enrolledCourses.map((course) => (
+                <div 
+                  key={course._id} 
+                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200"
+                >
+                  {/* Course Image */}
+                  <div className="relative h-48 w-full">
+                    {course.courseImage ? (
                       <Image
                         src={urlFor(course.courseImage).url()}
                         alt={course.title}
                         fill
                         className="object-cover"
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Course Info */}
                   <div className="p-4">
-                    <h3 className="font-semibold text-lg mb-2">{course.title}</h3>
-                    <p className="text-gray-600 text-sm line-clamp-2">
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                      {course.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                       {course.description}
                     </p>
-                    <a
+                    
+                    {/* Progress Bar */}
+                    <div className="mb-4">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className="bg-indigo-600 h-2.5 rounded-full" 
+                          style={{ width: `${course.progress || 0}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {course.progress || 0}% Complete
+                      </p>
+                    </div>
+
+                    {/* Action Button */}
+                    <Link
                       href={`/learn/${course._id}`}
-                      className="mt-4 inline-block text-blue-600 hover:text-blue-700"
+                      className="block w-full text-center bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200"
                     >
-                      Continue Learning →
-                    </a>
+                      Continue Learning
+                    </Link>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-              <p className="text-gray-600">
-                You haven't enrolled in any courses yet.
-              </p>
-              <a
-                href="/courses"
-                className="mt-4 inline-block text-blue-600 hover:text-blue-700"
+            <div className="text-center py-8 bg-white rounded-lg shadow-sm">
+              <p className="text-gray-600">You haven&apos;t enrolled in any courses yet.</p>
+              <Link 
+                href="/courses" 
+                className="mt-4 inline-block text-indigo-600 hover:text-indigo-700"
               >
-                Browse Available Courses →
-              </a>
+                Browse Courses
+              </Link>
             </div>
           )}
         </div>
 
-        {/* Profile Section */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold mb-4">Your Profile</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
-              <p className="mt-1 text-gray-900">{profile.name}</p>
+        {/* Available Courses Section */}
+        <div>
+          <h2 className="text-xl sm:text-2xl font-semibold mb-6">Available Courses</h2>
+          {loadingCourses ? (
+            <div className="text-center py-8">
+              <p>Loading courses...</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <p className="mt-1 text-gray-900">{profile.email}</p>
+          ) : availableCourses.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableCourses.map((course) => (
+                <div 
+                  key={course._id} 
+                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200"
+                >
+                  {/* Course Image */}
+                  <div className="relative h-48 w-full">
+                    {course.courseImage ? (
+                      <Image
+                        src={urlFor(course.courseImage).url()}
+                        alt={course.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Course Info */}
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                      {course.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      {course.description}
+                    </p>
+
+                    {/* Action Button */}
+                    <button
+                      onClick={() => handleEnroll(course._id)}
+                      className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
+                      disabled={enrolling === course._id}
+                    >
+                      {enrolling === course._id ? 'Enrolling...' : 'Enroll Now'}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            {profile.bio && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Bio</label>
-                <p className="mt-1 text-gray-900">{profile.bio}</p>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="text-center py-8 bg-white rounded-lg shadow-sm">
+              <p className="text-gray-600">No courses available at the moment.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
