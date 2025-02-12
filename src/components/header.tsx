@@ -15,6 +15,18 @@ export default function Header() {
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+      // Force navigation to login page after logout
+      router.push('/auth/login')
+      // Force a refresh of the page to ensure clean state
+      router.refresh()
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
+
   return (
     <header className="bg-white shadow-md">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,8 +62,8 @@ export default function Header() {
                   Dashboard
                 </Link>
                 <button
-                  onClick={() => logout()}
-                  className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
+                  onClick={handleLogout}
+                  className="text-gray-600 hover:text-gray-900"
                 >
                   Logout
                 </button>

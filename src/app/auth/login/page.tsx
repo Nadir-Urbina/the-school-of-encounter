@@ -68,8 +68,9 @@ export default function LoginPage() {
     try {
       await signInWithGoogle()
       router.push('/dashboard')
+      router.refresh()
     } catch (error) {
-      setError('Failed to sign in with Google')
+      console.error('Google sign in error:', error)
     }
   }
 

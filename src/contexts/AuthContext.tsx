@@ -5,6 +5,7 @@ import { auth } from '@/lib/firebase'
 import { getUserProfile } from '@/lib/user'
 import Cookies from 'js-cookie'
 import { client } from '@/lib/sanity'
+import { useRouter } from 'next/navigation'
 
 interface AuthContextType {
   user: {
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthContextType['user']>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -46,10 +48,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Cookies.remove('user')
       }
       setLoading(false)
+      
+      // Force a refresh when auth state changes
+      router.refresh()
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [router])
 
   const logout = async () => {
     try {
