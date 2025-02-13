@@ -67,7 +67,7 @@ export default function RegisterPage() {
       await new Promise(resolve => setTimeout(resolve, 2000))
 
       setLoadingState('verifying')
-      let profile = await getUserProfile(userCredential.user.uid)
+      const profile = await getUserProfile(userCredential.user.uid)
 
       if (profile) {
         router.push('/dashboard')
