@@ -18,17 +18,6 @@ export default function LoginPage() {
   const router = useRouter()
   const { signInWithGoogle } = useAuth()
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log('Auth state changed - user logged in')
-        router.push('/dashboard')
-      }
-    })
-
-    return () => unsubscribe()
-  }, [router])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -46,6 +35,7 @@ export default function LoginPage() {
       if (profile) {
         console.log('Login successful, profile found:', profile)
         router.push('/dashboard')
+        router.refresh()
       } else {
         setError('User profile not found')
       }

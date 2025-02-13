@@ -33,20 +33,30 @@ export async function createOrUpdateUserProfile(userData: {
 }
 
 export async function getUserProfile(firebaseUID: string) {
-  return client.fetch(`
-    *[_type == "userProfile" && firebaseUID == $uid][0] {
-      _id,
-      name,
-      email,
-      role,
-      bio,
-      avatar,
-      "enrolledCourses": enrolledCourses[]-> {
+  try {
+    console.log('Fetching profile for Firebase UID:', firebaseUID)
+    const profile = await client.fetch(`
+      *[_type == "userProfile" && firebaseUID == $uid][0] {
         _id,
-        title,
-        description,
-        courseImage
+        firebaseUID,
+        name,
+        email,
+        role,
+        bio,
+        avatar,
+        "enrolledCourses": enrolledCourses[]-> {
+          _id,
+          title,
+          description,
+          courseImage
+        }
       }
-    }
-  `, { uid: firebaseUID })
+    `, { uid: firebaseUID })
+
+    console.log('Profile found:', profile)
+    return profile
+  } catch (error) {
+    console.error('Error in getUserProfile:', error)
+    throw error
+  }
 } 

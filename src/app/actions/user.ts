@@ -22,15 +22,31 @@ export async function createSanityUserProfile(userData: {
   }
 
   try {
+    // First check if user already exists
+    const existingUser = await client.fetch(
+      `*[_type == "userProfile" && firebaseUID == $uid][0]`,
+      { uid: userData.firebaseUID }
+    )
+
+    if (existingUser) {
+      console.log('User profile already exists:', existingUser._id)
+      return existingUser
+    }
+
     // Add more detailed logging
-    console.log('Attempting to create Sanity profile for:', userData.email)
+    console.log('Creating new Sanity profile for:', userData.email)
     
+    // Verify all required fields are present
+    if (!userData.firebaseUID || !userData.email || !userData.name) {
+      throw new Error('Missing required user data')
+    }
+
     const result = await client.create({
       _type: 'userProfile',
       firebaseUID: userData.firebaseUID,
       name: userData.name,
       email: userData.email,
-      role: userData.role,
+      role: userData.role || 'student',
       enrolledCourses: []
     })
     
@@ -40,9 +56,23 @@ export async function createSanityUserProfile(userData: {
     // More detailed error logging
     console.error('Failed to create Sanity profile:', {
       error,
-      userData: { ...userData, firebaseUID: '***' } // Hide sensitive data
+      userData: { 
+        ...userData, 
+        firebaseUID: '***' // Hide sensitive data
+      }
     })
+
+    if (error instanceof Error) {
+      // Check for specific Sanity errors
+      if (error.message.includes('token')) {
+        throw new Error('Authentication error with Sanity')
+      }
+      if (error.message.includes('validation')) {
+        throw new Error('Invalid user data format')
+      }
+      throw new Error(`Sanity profile creation failed: ${error.message}`)
+    }
     
-    throw new Error(`Failed to create Sanity profile: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    throw new Error('Unknown error creating Sanity profile')
   }
 } 

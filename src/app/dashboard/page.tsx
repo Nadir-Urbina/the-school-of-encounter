@@ -51,13 +51,22 @@ export default function DashboardPage() {
   const [loadingCourses, setLoadingCourses] = useState(true)
   const [availableCourses, setAvailableCourses] = useState<any[]>([])
   const [enrolling, setEnrolling] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
+  const maxRetries = 3
 
   useEffect(() => {
     async function loadProfile() {
       if (user?.uid) {
         try {
           const userProfile = await getUserProfile(user.uid)
-          setProfile(userProfile)
+          if (userProfile) {
+            setProfile(userProfile)
+          } else if (retryCount < maxRetries) {
+            // If profile not found, wait and retry
+            setTimeout(() => {
+              setRetryCount(prev => prev + 1)
+            }, 1000)
+          }
         } catch (error) {
           console.error('Error loading profile:', error)
         } finally {
@@ -73,7 +82,7 @@ export default function DashboardPage() {
         loadProfile()
       }
     }
-  }, [user, loading, router])
+  }, [user, loading, router, retryCount])
 
   useEffect(() => {
     async function loadCourses() {
@@ -102,9 +111,15 @@ export default function DashboardPage() {
   const handleEnroll = async (courseId: string) => {
     setEnrolling(courseId)
     try {
-      // Add the course reference to the user's enrolledCourses array
+      // First get the user's Sanity document ID
+      const userProfile = await getUserProfile(user!.uid)
+      if (!userProfile?._id) {
+        throw new Error('User profile not found')
+      }
+
+      // Now patch the correct document using its Sanity _id
       await client
-        .patch(user!.uid)
+        .patch(userProfile._id) // Use the Sanity document ID, not Firebase UID
         .setIfMissing({ enrolledCourses: [] })
         .append('enrolledCourses', [{ _ref: courseId, _type: 'reference' }])
         .commit()
@@ -124,7 +139,9 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold">Loading...</h2>
+          <h2 className="text-xl font-semibold">
+            {retryCount > 0 ? 'Finalizing your account...' : 'Loading...'}
+          </h2>
         </div>
       </div>
     )

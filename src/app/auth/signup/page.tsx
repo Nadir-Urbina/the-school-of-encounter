@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 import { auth, db } from '@/lib/firebase'
 import { createSanityUserProfile } from '@/app/actions/user'
 import  GoogleSignInButton  from '@/components/GoogleSignInButton'
+import { client } from '@/lib/sanity'
+import { getUserProfile } from '@/lib/user'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -22,6 +24,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setLoading(true)
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
@@ -33,13 +36,11 @@ export default function RegisterPage() {
       return
     }
 
-    setLoading(true)
-
     try {
       // Create the Firebase user
       const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        formData.email, 
+        auth,
+        formData.email,
         formData.password
       )
 
@@ -60,13 +61,24 @@ export default function RegisterPage() {
         createdAt: new Date().toISOString()
       })
 
-      // Create Sanity profile using server action
-      await createSanityUserProfile({
+      // Create Sanity profile
+      await client.create({
+        _type: 'userProfile',
         firebaseUID: userCredential.user.uid,
-        email: formData.email,
         name: formData.name,
-        role: 'student'
+        email: formData.email,
+        role: 'student',
+        enrolledCourses: []
       })
+
+      // Add a longer delay to ensure Sanity has processed the creation
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // Only redirect after ensuring profile is created
+      const profile = await getUserProfile(userCredential.user.uid)
+      if (!profile) {
+        throw new Error('Profile creation failed')
+      }
 
       router.push('/dashboard')
     } catch (err: any) {
