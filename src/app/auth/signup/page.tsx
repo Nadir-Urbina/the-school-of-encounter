@@ -18,13 +18,13 @@ export default function RegisterPage() {
     confirmPassword: ''
   })
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loadingState, setLoadingState] = useState<'idle' | 'creating-user' | 'creating-profile' | 'verifying'>('idle')
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
+    setLoadingState('creating-user')
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
@@ -37,7 +37,7 @@ export default function RegisterPage() {
     }
 
     try {
-      // Create the Firebase user
+      // Create Firebase user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -48,18 +48,7 @@ export default function RegisterPage() {
         throw new Error('No user created')
       }
 
-      // Add the display name
-      await updateProfile(userCredential.user, {
-        displayName: formData.name
-      })
-
-      // Store data in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        name: formData.name,
-        email: formData.email,
-        role: 'student',
-        createdAt: new Date().toISOString()
-      })
+      setLoadingState('creating-profile')
 
       // Create Sanity profile
       await client.create({
@@ -71,21 +60,26 @@ export default function RegisterPage() {
         enrolledCourses: []
       })
 
-      // Add a longer delay to ensure Sanity has processed the creation
+      // Store in session that we're creating a new user
+      sessionStorage.setItem('newUserCreation', 'true')
+
+      // Wait longer for the first verification
       await new Promise(resolve => setTimeout(resolve, 2000))
 
-      // Only redirect after ensuring profile is created
-      const profile = await getUserProfile(userCredential.user.uid)
-      if (!profile) {
-        throw new Error('Profile creation failed')
+      setLoadingState('verifying')
+      let profile = await getUserProfile(userCredential.user.uid)
+
+      if (profile) {
+        router.push('/dashboard')
+      } else {
+        throw new Error('Profile creation verification failed')
       }
 
-      router.push('/dashboard')
     } catch (err: any) {
       console.error('Signup error:', err)
       setError(err.message || 'Failed to create account')
     } finally {
-      setLoading(false)
+      setLoadingState('idle')
     }
   }
 
@@ -98,6 +92,19 @@ export default function RegisterPage() {
 
   const handleGoogleSignIn = () => {
     // Implementation of Google Sign In
+  }
+
+  const getButtonText = () => {
+    switch (loadingState) {
+      case 'creating-user':
+        return 'Creating account...'
+      case 'creating-profile':
+        return 'Setting up profile...'
+      case 'verifying':
+        return 'Verifying profile...'
+      default:
+        return 'Sign up'
+    }
   }
 
   return (
@@ -193,10 +200,10 @@ export default function RegisterPage() {
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loadingState !== 'idle'}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400"
             >
-              {loading ? 'Creating account...' : 'Sign up'}
+              {getButtonText()}
             </button>
           </div>
         </form>

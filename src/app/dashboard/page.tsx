@@ -53,19 +53,37 @@ export default function DashboardPage() {
   const [enrolling, setEnrolling] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const maxRetries = 3
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
       if (user?.uid) {
         try {
-          const userProfile = await getUserProfile(user.uid)
-          if (userProfile) {
-            setProfile(userProfile)
-          } else if (retryCount < maxRetries) {
-            // If profile not found, wait and retry
-            setTimeout(() => {
-              setRetryCount(prev => prev + 1)
-            }, 1000)
+          // Check if this is a new user creation
+          const isNewUser = sessionStorage.getItem('newUserCreation')
+          
+          if (isNewUser) {
+            // For new users, wait a bit longer for the first fetch
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            sessionStorage.removeItem('newUserCreation')
+          }
+
+          let profile = null
+          let attempts = 0
+          const maxAttempts = 3
+
+          while (!profile && attempts < maxAttempts) {
+            profile = await getUserProfile(user.uid)
+            if (!profile) {
+              await new Promise(resolve => setTimeout(resolve, 1000))
+            }
+            attempts++
+          }
+
+          if (profile) {
+            setProfile(profile)
+          } else {
+            setError('Unable to load profile')
           }
         } catch (error) {
           console.error('Error loading profile:', error)
@@ -82,7 +100,7 @@ export default function DashboardPage() {
         loadProfile()
       }
     }
-  }, [user, loading, router, retryCount])
+  }, [user, loading, router])
 
   useEffect(() => {
     async function loadCourses() {
