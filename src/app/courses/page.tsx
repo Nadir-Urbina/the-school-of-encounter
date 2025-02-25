@@ -1,94 +1,119 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Image from 'next/image'
+import Link from 'next/link'
+import { client, urlFor } from '@/lib/sanity'
 
-const courses = [
-  {
-    id: 1,
-    title: 'Encounter 101',
-    description: 'Learn the basics of spiritual encounters and how to cultivate a deeper relationship with God.',
-    duration: '6 weeks',
-    level: 'Beginner',
-    price: 99,
-  },
-  {
-    id: 2,
-    title: 'Spiritual Warfare 101',
-    description: 'Understand the principles of spiritual warfare and learn effective strategies for overcoming.',
-    duration: '8 weeks',
-    level: 'Intermediate',
-    price: 129,
-  },
-  {
-    id: 3,
-    title: 'Birthing Intercession',
-    description: 'Develop powerful intercessory prayer skills and learn how to pray with authority.',
-    duration: '6 weeks',
-    level: 'Intermediate',
-    price: 99,
-  },
-  {
-    id: 4,
-    title: 'Bloodline Deliverance',
-    description: 'Discover how to break free from generational curses and walk in freedom.',
-    duration: '10 weeks',
-    level: 'Advanced',
-    price: 149,
-  },
-  {
-    id: 5,
-    title: 'Kingdom Leadership',
-    description: 'Learn to lead with divine principles and authority in various spheres of influence.',
-    duration: '12 weeks',
-    level: 'Advanced',
-    price: 199,
-  },
-  {
-    id: 6,
-    title: 'Prophetic Foundations',
-    description: 'Explore the basics of the prophetic and how to hear God\'s voice clearly.',
-    duration: '8 weeks',
-    level: 'Beginner',
-    price: 129,
-  },
-]
+interface Course {
+  _id: string
+  title: string
+  description: string
+  slug: { current: string }
+  courseImage: any
+  instructors: { name: string }[]
+  rating?: number
+  totalStudents?: number
+}
 
-export default function CourseCatalog() {
+export default async function CoursesPage() {
+  // Fetch all courses (removed the [0...5] limit)
+  const courses = await client.fetch<Course[]>(`
+    *[_type == "course"] {
+      _id,
+      title,
+      description,
+      slug,
+      courseImage,
+      "instructors": instructors[]->{ name },
+      rating,
+      totalStudents
+    }
+  `)
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-slate-100">
-      <main className="flex-grow container mx-auto px-4 py-12">
-        <h1 className="font-heading text-4xl font-bold mb-12 text-center bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Course Catalog
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+      <div className="container mx-auto px-4 py-16">
+        <h1 className="font-heading text-4xl md:text-5xl font-bold text-center mb-12">
+          Available Courses
         </h1>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {courses.map((course) => (
-            <Card key={course.id} className="flex flex-col hover:shadow-xl transition-shadow duration-300 border-0 bg-white/70 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="font-heading bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <div
+              key={course._id}
+              className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 
+                        hover:shadow-lg transition-all duration-200"
+            >
+              {/* Course Image */}
+              <div className="relative aspect-video">
+                <Image
+                  src={urlFor(course.courseImage).url()}
+                  alt={course.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+
+              {/* Course Content */}
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2">
                   {course.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-gray-600 mb-4">{course.description}</p>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-sm text-gray-500">Duration: {course.duration}</span>
-                  <span className="text-sm text-gray-500">Level: {course.level}</span>
+                </h3>
+
+                {/* Instructors */}
+                {course.instructors && (
+                  <p className="text-sm text-gray-600 mb-2">
+                    By {course.instructors.map(instructor => instructor.name).join(', ')}
+                  </p>
+                )}
+
+                {/* Rating */}
+                <div className="flex items-center mb-2">
+                  <div className="flex text-yellow-400">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(course.rating || 0) ? 'fill-current' : 'fill-gray-300'
+                        }`}
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  {course.rating && (
+                    <span className="text-sm font-bold text-gray-700 ml-1">
+                      {course.rating.toFixed(1)}
+                    </span>
+                  )}
+                  {course.totalStudents && (
+                    <span className="text-sm text-gray-600 ml-1">
+                      ({course.totalStudents.toLocaleString()} students)
+                    </span>
+                  )}
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-[#003ab8]">${course.price}</span>
-                  <Button className="bg-[#003ab8] text-white hover:bg-[#002a85]">
-                    Enroll Now
-                  </Button>
+
+                <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                  {course.description}
+                </p>
+
+                {/* Price and CTA */}
+                <div className="flex items-center justify-between">
+                  <Link
+                    href={`/courses/${course.slug.current}`}
+                    className="inline-flex items-center justify-center px-4 py-2 
+                              border border-transparent rounded-md shadow-sm text-sm 
+                              font-medium text-white bg-indigo-600 hover:bg-indigo-700 
+                              focus:outline-none focus:ring-2 focus:ring-offset-2 
+                              focus:ring-indigo-500"
+                  >
+                    Learn More
+                  </Link>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
-      </main>
-      <footer className="bg-gray-100 py-8">
-        <div className="container mx-auto px-4 text-center text-gray-600">
-          <p>&copy; 2023 The School of Encounter. All rights reserved.</p>
-        </div>
-      </footer>
+      </div>
     </div>
   )
 }

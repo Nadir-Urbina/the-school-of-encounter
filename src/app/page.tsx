@@ -72,52 +72,71 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white py-24">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-heading text-5xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100">
+      {/* Hero Section - Enhanced with background pattern and animation */}
+      <section className="relative bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 text-white py-32">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            {/* Add subtle grid pattern */}
+            <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M0 32V0h32" fill="none" stroke="white" strokeWidth="1"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+            </svg>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 text-center relative">
+          <h1 className="font-heading text-5xl md:text-7xl font-bold mb-6 
+                         bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-100
+                         animate-fade-in-up">
             Welcome to The School of Encounter
           </h1>
-          <p className="text-xl md:text-2xl mb-12 text-blue-100">
+          <p className="text-xl md:text-2xl mb-12 text-blue-100 max-w-2xl mx-auto
+                        opacity-0 animate-fade-in-up animation-delay-200">
             Equipping you for spiritual growth and kingdom impact
           </p>
           <Link 
             href="/courses" 
             className="inline-block px-8 py-4 bg-white text-blue-700 rounded-lg font-semibold 
-                     hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 
-                     shadow-lg hover:shadow-xl"
+                       hover:bg-blue-50 transform hover:scale-105 transition-all duration-300 
+                       shadow-lg hover:shadow-xl opacity-0 animate-fade-in-up animation-delay-400"
           >
             Explore Courses
           </Link>
         </div>
       </section>
 
-      {/* Featured Courses Section */}
+      {/* Featured Courses - Enhanced with card design */}
       <section className="py-20 bg-gradient-to-b from-slate-50 to-slate-100">
         <div className="container mx-auto px-4">
-          <h2 className="font-heading text-3xl font-bold text-center mb-12">
+          <h2 className="font-heading text-4xl font-bold text-center mb-4">
             Featured Courses
           </h2>
+          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+            Begin your journey with our most popular and impactful courses
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {courses.map((course) => (
               <div
                 key={course._id}
-                className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 
-                          hover:shadow-lg transition-all duration-200"
+                className="group bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 
+                          hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
-                {/* Course Image */}
+                {/* Course Image with overlay */}
                 <div className="relative aspect-video">
                   <Image
                     src={urlFor(course.courseImage).url()}
                     alt={course.title}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
 
-                {/* Course Content */}
                 <div className="p-6">
-                  <h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2">
+                  <h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors duration-300">
                     {course.title}
                   </h3>
 
@@ -179,30 +198,44 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Testimonials - Enhanced with modern card design */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center">What Our Students Say</h2>
+          <h2 className="text-4xl font-bold mb-4 text-center">What Our Students Say</h2>
+          <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+            Real experiences from our community of learners
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {testimonials.map((testimonial) => (
-              <Card key={testimonial._id} className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                <CardHeader className="flex flex-col items-center">
+              <div 
+                key={testimonial._id} 
+                className="relative bg-white rounded-xl p-8 shadow-sm hover:shadow-xl 
+                           transition-all duration-300 transform hover:-translate-y-1"
+              >
+                {/* Decorative quote mark */}
+                <div className="absolute top-4 right-4 text-blue-100">
+                  <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 32 32">
+                    <path d="M10 8v8H6v-8h4zm12 0v8h-4v-8h4z"/>
+                  </svg>
+                </div>
+                
+                <div className="relative">
                   {testimonial.image && (
                     <Image
-                      src={urlFor(testimonial.image).width(100).height(100).url()}
-                      alt={`${testimonial.name}'s profile picture`}
-                      width={100}
-                      height={100}
-                      className="rounded-full mb-4"
+                      src={urlFor(testimonial.image).width(64).height(64).url()}
+                      alt={testimonial.name}
+                      width={64}
+                      height={64}
+                      className="rounded-full mb-4 border-2 border-blue-100"
                     />
                   )}
-                  <CardTitle className="text-[#003ab8] text-center">{testimonial.name}</CardTitle>
-                  <p className="text-gray-600 text-center">{testimonial.role}</p>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-700 text-center">{testimonial.content}</p>
-                </CardContent>
-              </Card>
+                  <p className="text-gray-700 mb-4 italic">{testimonial.content}</p>
+                  <div className="border-t pt-4">
+                    <p className="font-semibold text-gray-900">{testimonial.name}</p>
+                    <p className="text-sm text-gray-600">{testimonial.role}</p>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -248,6 +281,103 @@ export default async function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-12 text-center">Why Choose The School of Encounter</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center p-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Spiritual Growth</h3>
+              <p className="text-gray-600">Deepen your spiritual journey through practical and transformative teachings</p>
+            </div>
+            <div className="text-center p-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Community Learning</h3>
+              <p className="text-gray-600">Join a vibrant community of believers pursuing spiritual excellence</p>
+            </div>
+            <div className="text-center p-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Practical Application</h3>
+              <p className="text-gray-600">Learn through hands-on experience and real-world ministry scenarios</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold mb-2">How do the online courses work?</h3>
+              <p className="text-gray-600">Our courses are self-paced and accessible 24/7. You'll get access to video lessons, study materials, and interactive assignments. Complete them at your own pace and track your progress.</p>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold mb-2">Will I get a certificate upon completion?</h3>
+              <p className="text-gray-600">Yes! Upon successful completion of each course, you'll receive a digital certificate that you can share and add to your spiritual education portfolio.</p>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold mb-2">Is there any deadline to complete a course?</h3>
+              <p className="text-gray-600">No, our courses are designed to be flexible. Once enrolled, you have lifetime access to the course materials and can complete them at your own pace.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Ready to Begin Your Journey?</h2>
+          <p className="text-xl text-blue-100 mb-8">Join thousands of students already learning with us</p>
+          <Link
+            href="/courses"
+            className="inline-block px-8 py-4 bg-white text-blue-600 rounded-lg font-semibold
+                      hover:bg-blue-50 transform hover:scale-105 transition-all duration-300
+                      shadow-lg hover:shadow-xl"
+          >
+            Browse All Courses
+          </Link>
+        </div>
+      </section>
+
+      {/* Newsletter Section (Optional) */}
+      <section className="py-16 bg-gray-900">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
+          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+            Subscribe to our newsletter for the latest courses, spiritual insights, and community updates
+          </p>
+          <form className="max-w-md mx-auto flex gap-4">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold
+                       hover:bg-blue-700 transition-colors duration-300"
+            >
+              Subscribe
+            </button>
+          </form>
         </div>
       </section>
 
