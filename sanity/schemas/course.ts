@@ -57,6 +57,15 @@ export default {
         .precision(1) // Allows one decimal place
     },
     {
+      name: 'price',
+      title: 'Price',
+      type: 'number',
+      validation: (Rule: Rule) => Rule
+        .required()
+        .min(0)
+        .precision(2) // Allows two decimal places for cents
+    },
+    {
       name: 'totalStudents',
       title: 'Total Students',
       type: 'number',

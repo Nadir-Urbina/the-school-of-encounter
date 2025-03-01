@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { client } from '@/lib/sanity'
 import { PortableTextBlock } from '@portabletext/types'
+import Link from 'next/link'
 
 interface Lesson {
   _id: string
@@ -72,8 +73,26 @@ export default function CourseLearnPage({
 
     async function loadCourse() {
       try {
+        // First, get the user's Sanity document ID
+        const userDoc = await client.fetch(`
+          *[_type == "userProfile" && firebaseUID == $userId][0]._id
+        `, { userId: user!.uid })
+
+        // Then check if the user is enrolled in this course
+        const enrollment = await client.fetch(`
+          *[_type == "enrollment" && student._ref == $userDocId && course->slug.current == $courseId][0]
+        `, { 
+          userDocId: userDoc,
+          courseId: resolvedParams.courseId 
+        })
+
+        if (!enrollment) {
+          router.replace('/dashboard')
+          return
+        }
+
         const courseData = await client.fetch(`
-          *[_type == "course" && _id == $courseId][0] {
+          *[_type == "course" && slug.current == $courseId][0] {
             _id,
             title,
             "modules": modules[]-> {
@@ -92,13 +111,15 @@ export default function CourseLearnPage({
         `, { courseId: resolvedParams.courseId })
 
         if (courseData) {
+          console.log('Course data:', courseData) // For debugging
           setCourse(courseData)
-          if (!currentLesson && courseData.modules[0]?.lessons[0]) {
+          if (!currentLesson && courseData.modules?.[0]?.lessons?.[0]) {
             setCurrentLesson(courseData.modules[0].lessons[0])
           }
         }
       } catch (error) {
         console.error('Error loading course:', error)
+        setError('Error loading course')
       } finally {
         setLoadingCourse(false)
       }
@@ -131,7 +152,18 @@ export default function CourseLearnPage({
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center text-white">
-          <h2 className="text-xl font-semibold text-red-400">Course not found</h2>
+          <h2 className="text-xl font-semibold text-red-400">
+            {course ? "No lessons available yet" : "Course not found"}
+          </h2>
+          <p className="mt-2 text-gray-400">
+            {course ? "Please check back later when content has been added." : ""}
+          </p>
+          <Link 
+            href="/courses" 
+            className="mt-4 inline-block text-indigo-400 hover:text-indigo-300"
+          >
+            ← Back to Courses
+          </Link>
         </div>
       </div>
     )

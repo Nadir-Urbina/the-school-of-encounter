@@ -12,8 +12,10 @@ interface Course {
   title: string
   courseImage: any
   description: string
+  price: number
   totalStudents: number
-  newStudents: number // Last 30 days
+  monthlyStudents: number // Current month
+  expectedRevenue: number // Monthly revenue calculation
 }
 
 export default function TeacherDashboardPage() {
@@ -56,16 +58,21 @@ export default function TeacherDashboardPage() {
             title,
             courseImage,
             description,
-            "totalStudents": count(*[_type == "userProfile" && references(^._id)]),
-            "newStudents": count(*[
-              _type == "userProfile" && 
-              references(^._id) && 
-              dateTime(_updatedAt) > dateTime($thirtyDaysAgo)
-            ])
+            price,
+            "totalStudents": count(*[_type == "enrollment" && course._ref == ^._id]),
+            "monthlyStudents": count(*[
+              _type == "enrollment" && 
+              course._ref == ^._id && 
+              dateTime(enrolledAt) >= dateTime(now()) - 60*60*24*30
+            ]),
+            "expectedRevenue": count(*[
+              _type == "enrollment" && 
+              course._ref == ^._id && 
+              dateTime(enrolledAt) >= dateTime(now()) - 60*60*24*30
+            ]) * (price * 0.47)
           }
         `, {
-          instructorId: instructorDoc._id,
-          thirtyDaysAgo: thirtyDaysAgo.toISOString()
+          instructorId: instructorDoc._id
         })
 
         console.log('Courses found:', coursesData)
@@ -122,7 +129,7 @@ export default function TeacherDashboardPage() {
                 </p>
                 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
+                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
                   <div>
                     <p className="text-sm text-gray-500">Total Students</p>
                     <p className="text-2xl font-semibold text-gray-900">
@@ -130,9 +137,15 @@ export default function TeacherDashboardPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">New Students (30d)</p>
+                    <p className="text-sm text-gray-500">New This Month</p>
                     <p className="text-2xl font-semibold text-indigo-600">
-                      +{course.newStudents}
+                      +{course.monthlyStudents}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Expected Revenue</p>
+                    <p className="text-2xl font-semibold text-green-600">
+                      ${course.expectedRevenue?.toFixed(2) || '0.00'}
                     </p>
                   </div>
                 </div>

@@ -7,20 +7,38 @@ import Image from 'next/image'
 import { urlFor } from '@/lib/sanity'
 import Link from 'next/link'
 import { client } from '@/lib/sanity'
+import { loadStripe } from '@stripe/stripe-js'
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 async function getUserCourses(userId: string) {
-  // First get the user's enrolled courses
+  // First get the user's Sanity ID
   const userDoc = await client.fetch(`
-    *[_type == "userProfile" && firebaseUID == $userId][0] {
-      "enrolledCourses": enrolledCourses[]-> {
+    *[_type == "userProfile" && firebaseUID == $userId][0]._id
+  `, { userId })
+
+  // Then get the enrolled courses through enrollments
+  const enrolledCoursesData = await client.fetch(`
+    *[_type == "enrollment" && student._ref == $userDocId] {
+      "course": course-> {
         _id,
         title,
         description,
         courseImage,
-        progress
+        "slug": slug.current,
+        "progress": 0,
+        enrolledAt,
+        status
       }
     }
-  `, { userId })
+  `, { userDocId: userDoc })
+
+  // Extract just the course data and add enrollment info
+  const enrolledCourses = enrolledCoursesData.map((enrollment: any) => ({
+    ...enrollment.course,
+    enrolledAt: enrollment.enrolledAt,
+    status: enrollment.status
+  }))
 
   // Then get all available courses
   const allCourses = await client.fetch(`
@@ -28,16 +46,21 @@ async function getUserCourses(userId: string) {
       _id,
       title,
       description,
-      courseImage
+      courseImage,
+      "price": price,
+      "slug": slug.current
     }
   `)
 
+  // Add some debugging
+  console.log('All courses with prices:', allCourses)
+
   // Filter out enrolled courses from available courses
-  const enrolledIds = userDoc?.enrolledCourses?.map((course: { _id: string }) => course._id) || []
+  const enrolledIds = enrolledCourses.map((course: { _id: string }) => course._id)
   const availableCourses = allCourses.filter((course: { _id: string }) => !enrolledIds.includes(course._id))
 
   return {
-    enrolledCourses: userDoc?.enrolledCourses || [],
+    enrolledCourses,
     availableCourses
   }
 }
@@ -126,28 +149,39 @@ export default function DashboardPage() {
     }
   }, [user, loading, router])
 
-  const handleEnroll = async (courseId: string) => {
+  const handleEnroll = async (courseId: string, price: number, title: string) => {
+    if (!user) {
+      router.push('/auth/login')
+      return
+    }
+
     setEnrolling(courseId)
     try {
-      // First get the user's Sanity document ID
-      const userProfile = await getUserProfile(user!.uid)
-      if (!userProfile?._id) {
-        throw new Error('User profile not found')
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseId,
+          userId: user.uid,
+          email: user.email,
+          price,
+          title
+        }),
+      })
+
+      const { sessionId } = await response.json()
+      
+      // Redirect to Stripe Checkout
+      const stripe = await stripePromise
+      const { error } = await stripe!.redirectToCheckout({ sessionId })
+      
+      if (error) {
+        console.error('Error:', error)
       }
-
-      // Now patch the correct document using its Sanity _id
-      await client
-        .patch(userProfile._id) // Use the Sanity document ID, not Firebase UID
-        .setIfMissing({ enrolledCourses: [] })
-        .append('enrolledCourses', [{ _ref: courseId, _type: 'reference' }])
-        .commit()
-
-      // Refresh the courses lists
-      const courses = await getUserCourses(user!.uid)
-      setEnrolledCourses(courses.enrolledCourses)
-      setAvailableCourses(courses.availableCourses)
     } catch (error) {
-      console.error('Error enrolling in course:', error)
+      console.error('Error:', error)
     } finally {
       setEnrolling(null)
     }
@@ -242,7 +276,7 @@ export default function DashboardPage() {
 
                     {/* Action Button */}
                     <Link
-                      href={`/learn/${course._id}`}
+                      href={`/learn/${course.slug}`}
                       className="block w-full text-center bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200"
                     >
                       Continue Learning
@@ -305,11 +339,12 @@ export default function DashboardPage() {
 
                     {/* Action Button */}
                     <button
-                      onClick={() => handleEnroll(course._id)}
+                      onClick={() => handleEnroll(course._id, course.price || 0, course.title)}
                       className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
-                      disabled={enrolling === course._id}
+                      disabled={enrolling === course._id || !course.price}
                     >
-                      {enrolling === course._id ? 'Enrolling...' : 'Enroll Now'}
+                      {enrolling === course._id ? 'Processing...' : 
+                       course.price ? `Enroll for $${course.price}` : 'Price unavailable'}
                     </button>
                   </div>
                 </div>

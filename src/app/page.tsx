@@ -357,7 +357,15 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Newsletter Section (Optional) */}
+      {/* Contact Form Section */}
+      <section id="contact" className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold mb-8 text-center text-[#003ab8]">Contact Us</h2>
+          <ContactForm />
+        </div>
+      </section>
+
+      {/* Newsletter Section - Moved here */}
       <section className="py-16 bg-gray-900">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
@@ -381,12 +389,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section id="contact" className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center text-[#003ab8]">Contact Us</h2>
-          <ContactForm />
-        </div>
-      </section>
+      {/* Footer would go here */}
     </div>
   )
 }

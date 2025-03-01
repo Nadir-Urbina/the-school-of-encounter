@@ -5,6 +5,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
+import { loadStripe } from '@stripe/stripe-js'
+import { useRouter } from 'next/navigation'
+import { checkEnrollment } from '@/lib/enrollment'
 
 interface Course {
   _id: string
@@ -37,6 +40,10 @@ interface Course {
   }>
 }
 
+type EnrollmentStatus = 'active' | 'pending' | 'completed' | null;
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+
 export default function CoursePreviewPage({
   params
 }: {
@@ -45,7 +52,10 @@ export default function CoursePreviewPage({
   const resolvedParams = use(params)
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false)
   const { user } = useAuth()
+  const router = useRouter()
+  const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatus>(null)
 
   useEffect(() => {
     async function loadCourse() {
@@ -87,14 +97,62 @@ export default function CoursePreviewPage({
     loadCourse()
   }, [resolvedParams.courseId])
 
+  useEffect(() => {
+    async function checkUserEnrollment() {
+      if (user?.uid && course?._id) {
+        setEnrollmentLoading(true)
+        try {
+          console.log('Checking enrollment for:', {
+            userId: user.uid,
+            courseId: course._id
+          })
+          const status = await checkEnrollment(user.uid, course._id)
+          console.log('Enrollment status:', status)
+          setEnrollmentStatus(status)
+        } catch (error) {
+          console.error('Error checking enrollment:', error)
+        } finally {
+          setEnrollmentLoading(false)
+        }
+      }
+    }
+
+    checkUserEnrollment()
+  }, [user, course])
+
   const handleEnroll = async () => {
     if (!user) {
-      // Redirect to login if user is not authenticated
       window.location.href = `/auth/login?redirect=/courses/${resolvedParams.courseId}`
       return
     }
-    // Add enrollment logic here
-    console.log('Enrolling in course:', course?._id)
+
+    try {
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseId: course?._id,
+          userId: user.uid,
+          email: user.email,
+          price: course?.price,
+          title: course?.title
+        }),
+      })
+
+      const { sessionId } = await response.json()
+      
+      // Redirect to Stripe Checkout
+      const stripe = await stripePromise
+      const { error } = await stripe!.redirectToCheckout({ sessionId })
+      
+      if (error) {
+        console.error('Error:', error)
+      }
+    } catch (error) {
+      console.error('Error:', error)
+    }
   }
 
   if (loading) {
@@ -182,12 +240,37 @@ export default function CoursePreviewPage({
                     ${course.price}
                   </div>
                 )}
-                <Button 
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
-                  onClick={handleEnroll}
-                >
-                  {user ? 'Enroll Now' : 'Sign in to Enroll'}
-                </Button>
+                {enrollmentLoading ? (
+                  <Button disabled className="w-full bg-gray-400 text-white cursor-not-allowed">
+                    Checking enrollment...
+                  </Button>
+                ) : enrollmentStatus === 'active' ? (
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => router.push(`/learn/${resolvedParams.courseId}`)}
+                  >
+                    Continue Learning
+                  </Button>
+                ) : enrollmentStatus === 'pending' ? (
+                  <Button 
+                    disabled
+                    className="w-full bg-yellow-600 text-white cursor-not-allowed"
+                  >
+                    Enrollment Pending
+                  </Button>
+                ) : (
+                  <Button 
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                    onClick={handleEnroll}
+                  >
+                    {user ? `Enroll for $${course.price}` : 'Sign in to Enroll'}
+                  </Button>
+                )}
+                {enrollmentStatus === 'active' && (
+                  <p className="mt-2 text-sm text-green-600">
+                    You are enrolled in this course
+                  </p>
+                )}
               </div>
             </div>
           </div>

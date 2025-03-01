@@ -4,6 +4,7 @@ import testimonial from './testimonial'
 import module from './module'
 import lesson from './lesson'
 import userProfile from './userProfile'
+import enrollment from './enrollment'
 
 export const schemaTypes = [
   course,
@@ -12,4 +13,5 @@ export const schemaTypes = [
   module,
   lesson,
   userProfile,
+  enrollment
 ] 
