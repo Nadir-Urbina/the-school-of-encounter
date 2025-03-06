@@ -3,5 +3,6 @@ export default function StudioLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Return only the children without any wrapper components
   return children
 } 

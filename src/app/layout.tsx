@@ -1,9 +1,8 @@
 import { Inter, Montserrat } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
-import Header from '@/components/header'
-import { Footer } from '@/components/footer'
 import { Toaster } from 'react-hot-toast'
+import ConditionalLayout from '@/components/ConditionalLayout'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -24,9 +23,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${montserrat.variable} font-sans`}>
         <AuthProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
           <Toaster position="bottom-right" />
         </AuthProvider>
       </body>

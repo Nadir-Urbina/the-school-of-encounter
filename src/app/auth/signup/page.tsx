@@ -50,15 +50,19 @@ export default function RegisterPage() {
 
       setLoadingState('creating-profile')
 
-      // Create Sanity profile
-      await client.create({
-        _type: 'userProfile',
-        firebaseUID: userCredential.user.uid,
-        name: formData.name,
-        email: formData.email,
-        role: 'student',
-        enrolledCourses: []
-      })
+      try {
+        // Use the existing server action to create Sanity profile
+        await createSanityUserProfile({
+          firebaseUID: userCredential.user.uid,
+          name: formData.name,
+          email: formData.email,
+          role: 'student'
+        })
+      } catch (profileError: any) {
+        console.error('Profile creation error:', profileError)
+        // Continue with the flow even if profile creation fails
+        // We'll handle this in the verification step
+      }
 
       // Store in session that we're creating a new user
       sessionStorage.setItem('newUserCreation', 'true')
@@ -72,7 +76,8 @@ export default function RegisterPage() {
       if (profile) {
         router.push('/dashboard')
       } else {
-        throw new Error('Profile creation verification failed')
+        // If profile verification fails, show a more specific error
+        throw new Error('Your account was created but we had trouble setting up your profile. Please contact support.')
       }
 
     } catch (err: any) {
