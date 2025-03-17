@@ -31,6 +31,11 @@ export default {
             { title: 'Cancelled', value: 'cancelled' }
           ]
         }
+      },
+      {
+        name: 'paymentId',
+        title: 'Payment ID',
+        type: 'string'
       }
     ]
   }
