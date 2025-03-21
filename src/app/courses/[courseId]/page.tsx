@@ -38,6 +38,29 @@ interface Course {
     name: string
     image: any
   }>
+  publishedAt?: string
+}
+
+// Helper function to format dates
+function formatDate(dateString: string | undefined): string {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  // Format as MM/DD/YYYY
+  return date.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  });
+}
+
+// Helper function to check if a course is not yet published
+function isComingSoon(publishedAt: string | undefined): boolean {
+  if (!publishedAt) return false;
+  
+  const now = new Date();
+  const publishDate = new Date(publishedAt);
+  return publishDate > now;
 }
 
 type EnrollmentStatus = 'active' | 'pending' | 'completed' | null;
@@ -82,7 +105,8 @@ export default function CoursePreviewPage({
                 title,
                 videoId
               }
-            }
+            },
+            publishedAt
           }
         `, { courseId: resolvedParams.courseId })
 
@@ -124,6 +148,11 @@ export default function CoursePreviewPage({
     if (!user) {
       window.location.href = `/auth/login?redirect=/courses/${resolvedParams.courseId}`
       return
+    }
+    
+    // Check if the course is not yet published
+    if (isComingSoon(course?.publishedAt)) {
+      return; // Don't allow enrollment for unreleased courses
     }
 
     try {
@@ -240,6 +269,13 @@ export default function CoursePreviewPage({
                     ${course.price}
                   </div>
                 )}
+                {isComingSoon(course?.publishedAt) && (
+                  <div className="mb-4">
+                    <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded">
+                      Coming Soon
+                    </span>
+                  </div>
+                )}
                 {enrollmentLoading ? (
                   <Button disabled className="w-full bg-gray-400 text-white cursor-not-allowed">
                     Checking enrollment...
@@ -257,6 +293,13 @@ export default function CoursePreviewPage({
                     className="w-full bg-yellow-600 text-white cursor-not-allowed"
                   >
                     Enrollment Pending
+                  </Button>
+                ) : isComingSoon(course?.publishedAt) ? (
+                  <Button 
+                    disabled
+                    className="w-full bg-gray-400 text-gray-800 cursor-not-allowed"
+                  >
+                    Available on {formatDate(course?.publishedAt)}
                   </Button>
                 ) : (
                   <Button 

@@ -8,6 +8,28 @@ import Link from 'next/link'
 import { client, urlFor } from '@/lib/sanity'
 import ContactForm from '@/components/ContactForm'
 
+// Helper function to format dates
+function formatDate(dateString: string | undefined): string {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  // Format as MM/DD/YYYY
+  return date.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  });
+}
+
+// Helper function to check if a course is not yet published
+function isComingSoon(publishedAt: string | undefined): boolean {
+  if (!publishedAt) return false;
+  
+  const now = new Date();
+  const publishDate = new Date(publishedAt);
+  return publishDate > now;
+}
+
 interface Course {
   _id: string
   title: string
@@ -17,6 +39,8 @@ interface Course {
   instructors: { name: string }[]
   rating?: number
   totalStudents?: number
+  publishedAt?: string
+  featuredCourse?: boolean
 }
 
 interface Instructor {
@@ -38,7 +62,7 @@ interface Testimonial {
 export default async function Home() {
   // Fetch data from Sanity
   const courses = await client.fetch<Course[]>(`
-    *[_type == "course"][0...5] {
+    *[_type == "course"] | order(featuredCourse desc, publishedAt desc) {
       _id,
       title,
       description,
@@ -46,7 +70,8 @@ export default async function Home() {
       courseImage,
       "instructors": instructors[]->{ name },
       rating,
-      totalStudents
+      totalStudents,
+      publishedAt
     }
   `)
 
@@ -147,6 +172,15 @@ export default async function Home() {
                     </p>
                   )}
 
+                  {/* Coming Soon badge */}
+                  {isComingSoon(course.publishedAt) && (
+                    <div className="mb-2">
+                      <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded">
+                        Coming Soon - {formatDate(course.publishedAt)}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Rating */}
                   <div className="flex items-center mb-2">
                     <div className="flex text-yellow-400">
@@ -182,11 +216,13 @@ export default async function Home() {
                   <div className="flex items-center justify-between">
                     <Link
                       href={`/courses/${course.slug.current}`}
-                      className="inline-flex items-center justify-center px-4 py-2 
+                      className={`inline-flex items-center justify-center px-4 py-2 
                                 border border-transparent rounded-md shadow-sm text-sm 
-                                font-medium text-white bg-indigo-600 hover:bg-indigo-700 
+                                font-medium ${isComingSoon(course.publishedAt) 
+                                  ? 'text-gray-700 bg-gray-200 cursor-default' 
+                                  : 'text-white bg-indigo-600 hover:bg-indigo-700'} 
                                 focus:outline-none focus:ring-2 focus:ring-offset-2 
-                                focus:ring-indigo-500"
+                                focus:ring-indigo-500`}
                     >
                       Learn More
                     </Link>
@@ -362,30 +398,6 @@ export default async function Home() {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center text-[#003ab8]">Contact Us</h2>
           <ContactForm />
-        </div>
-      </section>
-
-      {/* Newsletter Section - Moved here */}
-      <section className="py-16 bg-gray-900">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
-          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
-            Subscribe to our newsletter for the latest courses, spiritual insights, and community updates
-          </p>
-          <form className="max-w-md mx-auto flex gap-4">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold
-                       hover:bg-blue-700 transition-colors duration-300"
-            >
-              Subscribe
-            </button>
-          </form>
         </div>
       </section>
 

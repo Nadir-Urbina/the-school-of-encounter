@@ -26,7 +26,6 @@ async function getUserCourses(userId: string) {
         description,
         courseImage,
         "slug": slug.current,
-        "progress": 0,
         enrolledAt,
         status
       }
@@ -40,6 +39,64 @@ async function getUserCourses(userId: string) {
     status: enrollment.status
   }))
 
+  // Calculate progress for each course
+  const coursesWithProgress = await Promise.all(
+    enrolledCourses.map(async (course: any) => {
+      try {
+        // Get the full course structure with expanded modules and lessons
+        const courseDetails = await client.fetch(`
+          *[_type == "course" && _id == $courseId][0] {
+            _id,
+            "modules": modules[]-> {
+              _id,
+              "lessons": lessons[]->
+            }
+          }
+        `, { courseId: course._id })
+
+        // Calculate total lessons directly from the modules
+        let totalLessons = 0
+        if (courseDetails?.modules) {
+          courseDetails.modules.forEach((module: any) => {
+            totalLessons += module.lessons ? module.lessons.length : 0
+          })
+        }
+
+        // Get completed lessons count
+        const completedLessons = await client.fetch(`
+          count(*[
+            _type == "lessonProgress" && 
+            user._ref == $userDoc && 
+            course._ref == $courseId && 
+            completed == true
+          ])
+        `, { 
+          userDoc: userDoc, 
+          courseId: course._id 
+        })
+
+        const progress = totalLessons > 0 
+          ? Math.round((completedLessons / totalLessons) * 100) 
+          : 0
+
+        return {
+          ...course,
+          progress,
+          completedLessons,
+          totalLessons
+        }
+      } catch (err) {
+        console.error('Error calculating progress for course:', course._id, err)
+        return {
+          ...course,
+          progress: 0,
+          completedLessons: 0,
+          totalLessons: 0
+        }
+      }
+    })
+  )
+
   // Then get all available courses
   const allCourses = await client.fetch(`
     *[_type == "course"] {
@@ -48,21 +105,41 @@ async function getUserCourses(userId: string) {
       description,
       courseImage,
       "price": price,
-      "slug": slug.current
+      "slug": slug.current,
+      publishedAt
     }
   `)
 
-  // Add some debugging
-  console.log('All courses with prices:', allCourses)
-
   // Filter out enrolled courses from available courses
-  const enrolledIds = enrolledCourses.map((course: { _id: string }) => course._id)
+  const enrolledIds = coursesWithProgress.map((course: { _id: string }) => course._id)
   const availableCourses = allCourses.filter((course: { _id: string }) => !enrolledIds.includes(course._id))
 
   return {
-    enrolledCourses,
+    enrolledCourses: coursesWithProgress,
     availableCourses
   }
+}
+
+// Helper function to format dates
+function formatDate(dateString: string | undefined): string {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  // Format as MM/DD/YYYY
+  return date.toLocaleDateString('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric'
+  });
+}
+
+// Helper function to check if a course is not yet published
+function isComingSoon(publishedAt: string | undefined): boolean {
+  if (!publishedAt) return false;
+  
+  const now = new Date();
+  const publishDate = new Date(publishedAt);
+  return publishDate > now;
 }
 
 export default function DashboardPage() {
@@ -149,10 +226,15 @@ export default function DashboardPage() {
     }
   }, [user, loading, router])
 
-  const handleEnroll = async (courseId: string, price: number, title: string) => {
+  const handleEnroll = async (courseId: string, price: number, title: string, publishedAt?: string) => {
     if (!user) {
       router.push('/auth/login')
       return
+    }
+    
+    // Check if the course is not yet published
+    if (isComingSoon(publishedAt)) {
+      return; // Don't allow enrollment for unreleased courses
     }
 
     setEnrolling(courseId)
@@ -269,9 +351,14 @@ export default function DashboardPage() {
                           style={{ width: `${course.progress || 0}%` }}
                         ></div>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {course.progress || 0}% Complete
-                      </p>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-gray-600 mt-1">
+                          {course.progress || 0}% Complete
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {course.completedLessons || 0}/{course.totalLessons || 0} lessons
+                        </p>
+                      </div>
                     </div>
 
                     {/* Action Button */}
@@ -333,17 +420,29 @@ export default function DashboardPage() {
                     <h3 className="font-semibold text-lg mb-2 line-clamp-2">
                       {course.title}
                     </h3>
+                    {isComingSoon(course.publishedAt) && (
+                      <div className="mb-2">
+                        <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded">
+                          Coming Soon
+                        </span>
+                      </div>
+                    )}
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                       {course.description}
                     </p>
 
                     {/* Action Button */}
                     <button
-                      onClick={() => handleEnroll(course._id, course.price || 0, course.title)}
-                      className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
-                      disabled={enrolling === course._id || !course.price}
+                      onClick={() => handleEnroll(course._id, course.price || 0, course.title, course.publishedAt)}
+                      className={`w-full py-2 px-4 rounded-md transition-colors duration-200 ${
+                        isComingSoon(course.publishedAt) 
+                          ? 'bg-gray-400 text-gray-800 cursor-not-allowed' 
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      } disabled:opacity-50`}
+                      disabled={enrolling === course._id || !course.price || isComingSoon(course.publishedAt)}
                     >
                       {enrolling === course._id ? 'Processing...' : 
+                       isComingSoon(course.publishedAt) ? `Available on ${formatDate(course.publishedAt)}` :
                        course.price ? `Enroll for $${course.price}` : 'Price unavailable'}
                     </button>
                   </div>
