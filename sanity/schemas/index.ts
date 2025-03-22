@@ -6,6 +6,7 @@ import lesson from './lesson'
 import userProfile from './userProfile'
 import enrollment from './enrollment'
 import lessonProgress from './lessonProgress'
+import qaEvent from './qaEvent'
 
 export const schemaTypes = [
   course,
@@ -15,5 +16,6 @@ export const schemaTypes = [
   lesson,
   userProfile,
   enrollment,
-  lessonProgress
+  lessonProgress,
+  qaEvent
 ] 

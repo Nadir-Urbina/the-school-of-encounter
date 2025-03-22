@@ -42,6 +42,18 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
+            <Link 
+              href="/courses" 
+              className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Courses
+            </Link>
+            <Link 
+              href="/calendar" 
+              className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              Q&A Calendar
+            </Link>
             {user ? (
               <>
                 <Link 
@@ -51,12 +63,20 @@ export default function Header() {
                   Dashboard
                 </Link>
                 {user.role === 'teacher' && (
-                  <Link 
-                    href="/teacher-dashboard" 
-                    className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Teacher Dashboard
-                  </Link>
+                  <>
+                    <Link 
+                      href="/teacher-dashboard" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Teacher Dashboard
+                    </Link>
+                    <Link 
+                      href="/teacher-dashboard/calendar" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Manage Q&A
+                    </Link>
+                  </>
                 )}
                 <button
                   onClick={handleLogout}
@@ -131,6 +151,20 @@ export default function Header() {
       {/* Mobile menu */}
       <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden`}>
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <Link 
+            href="/courses" 
+            className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Courses
+          </Link>
+          <Link 
+            href="/calendar" 
+            className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Q&A Calendar
+          </Link>
           {user ? (
             <>
               <Link 
@@ -141,13 +175,22 @@ export default function Header() {
                 Dashboard
               </Link>
               {user.role === 'teacher' && (
-                <Link 
-                  href="/teacher-dashboard" 
-                  className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Teacher Dashboard
-                </Link>
+                <>
+                  <Link 
+                    href="/teacher-dashboard" 
+                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Teacher Dashboard
+                  </Link>
+                  <Link 
+                    href="/teacher-dashboard/calendar" 
+                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Manage Q&A
+                  </Link>
+                </>
               )}
               <button
                 onClick={() => {

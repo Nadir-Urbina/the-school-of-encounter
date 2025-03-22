@@ -1,4 +1,3 @@
-import Header from '@/components/header'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 const faqs = [
@@ -31,7 +30,6 @@ const faqs = [
 export default function FAQ() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-8 text-center text-[#003ab8]">Frequently Asked Questions</h1>
         <Accordion type="single" collapsible className="w-full max-w-3xl mx-auto">
