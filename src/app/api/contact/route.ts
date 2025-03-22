@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         Email: ${email}
         Message: ${message}
       `,
-      reply_to: email,
+      replyTo: email,
     });
     
     return NextResponse.json({ success: true, data });
