@@ -89,12 +89,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <div className="flex items-center">
                 <div>
                   <div className="h-9 w-9 rounded-full bg-blue-700 flex items-center justify-center text-white font-semibold">
-                    {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                    {user?.email?.charAt(0) || 'U'}
                   </div>
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-white">
-                    {user?.displayName || user?.email || 'Instructor'}
+                    {user?.email || 'Instructor'}
                   </p>
                   <Link
                     href="/teacher-dashboard/profile"

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { toast } from 'react-hot-toast'
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -10,17 +11,41 @@ export default function ContactForm() {
     email: '',
     message: '',
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prevState => ({ ...prevState, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    setFormData({ name: '', email: '', message: '' })
-    alert('Thank you for your message. We will get back to you soon!')
+    setIsSubmitting(true)
+    
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message')
+      }
+      
+      toast.success('Thank you for your message! We will get back to you soon.')
+      // Reset form
+      setFormData({ name: '', email: '', message: '' })
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      toast.error('Failed to send message. Please try again later.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -35,6 +60,7 @@ export default function ContactForm() {
           onChange={handleChange}
           required
           className="w-full"
+          disabled={isSubmitting}
         />
       </div>
       <div>
@@ -47,6 +73,7 @@ export default function ContactForm() {
           onChange={handleChange}
           required
           className="w-full"
+          disabled={isSubmitting}
         />
       </div>
       <div>
@@ -58,10 +85,15 @@ export default function ContactForm() {
           onChange={handleChange}
           required
           className="w-full h-32"
+          disabled={isSubmitting}
         />
       </div>
-      <Button type="submit" className="w-full bg-[#003ab8] text-white hover:bg-[#002a85]">
-        Send Message
+      <Button 
+        type="submit" 
+        className="w-full bg-[#003ab8] text-white hover:bg-[#002a85]"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Sending...' : 'Send Message'}
       </Button>
     </form>
   )
