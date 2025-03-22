@@ -80,6 +80,8 @@ export default function CourseLearnPage({
 
     async function fetchLessonProgress() {
       try {
+        if (!user) return;
+        
         // Get user's Sanity ID
         const userDoc = await client.fetch(`
           *[_type == "userProfile" && firebaseUID == $userId][0]._id
@@ -95,7 +97,7 @@ export default function CourseLearnPage({
           }
         `, { 
           userDoc, 
-          lessonId: currentLesson._id 
+          lessonId: currentLesson?._id 
         })
 
         if (progress) {
@@ -129,12 +131,12 @@ export default function CourseLearnPage({
           *[_type == "lessonProgress" && user._ref == $userDoc && course._ref == $courseId && completed == true].lesson._ref
         `, { 
           userDoc, 
-          courseId: course._id 
+          courseId: course?._id 
         })
 
         // Calculate total lessons
         let totalLessons = 0
-        course.modules.forEach(module => {
+        course?.modules.forEach(module => {
           totalLessons += module.lessons.length
         })
 
