@@ -8,6 +8,7 @@ import { urlFor } from '@/lib/sanity'
 import Link from 'next/link'
 import { client } from '@/lib/sanity'
 import { loadStripe } from '@stripe/stripe-js'
+import ProfileManagement from '@/components/ProfileManagement'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -154,6 +155,7 @@ export default function DashboardPage() {
   const [retryCount, setRetryCount] = useState(0)
   const maxRetries = 3
   const [error, setError] = useState<string | null>(null)
+  const [showProfileManagement, setShowProfileManagement] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -269,6 +271,19 @@ export default function DashboardPage() {
     }
   }
 
+  const handleProfileUpdated = async () => {
+    if (user?.uid) {
+      try {
+        const updatedProfile = await getUserProfile(user.uid)
+        if (updatedProfile) {
+          setProfile(updatedProfile)
+        }
+      } catch (error) {
+        console.error('Error reloading profile:', error)
+      }
+    }
+  }
+
   if (loading || loadingProfile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -294,6 +309,67 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* User Profile Section */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          {loadingProfile ? (
+            <div className="animate-pulse flex space-x-4">
+              <div className="rounded-full bg-gray-200 h-16 w-16"></div>
+              <div className="flex-1 space-y-4 py-1">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+                <div className="w-24 h-24 relative">
+                  {profile?.photoURL ? (
+                    <Image
+                      src={profile.photoURL}
+                      alt={profile.name || 'User'}
+                      fill
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl font-bold text-indigo-700">
+                        {profile?.name?.charAt(0) || user?.email?.charAt(0) || '?'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h1 className="text-2xl font-bold text-gray-900">{profile?.name || user?.email || 'User'}</h1>
+                  <p className="text-gray-600">{user?.email}</p>
+                  {profile?.bio && (
+                    <p className="mt-2 text-gray-700">{profile.bio}</p>
+                  )}
+                  
+                  <button 
+                    onClick={() => setShowProfileManagement(!showProfileManagement)}
+                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    {showProfileManagement ? 'Hide Profile Management' : 'Manage Profile'}
+                  </button>
+                </div>
+              </div>
+              
+              {showProfileManagement && (
+                <div className="mt-8">
+                  <ProfileManagement 
+                    userProfile={profile} 
+                    onProfileUpdated={handleProfileUpdated}
+                    onClose={() => setShowProfileManagement(false)}
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">

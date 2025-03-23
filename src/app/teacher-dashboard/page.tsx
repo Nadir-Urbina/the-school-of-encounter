@@ -426,10 +426,18 @@ export default function TeacherDashboardPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Expected Revenue</p>
-                    <p className="text-2xl font-semibold text-green-600">
-                      ${course.expectedRevenue?.toFixed(2) || '0.00'}
-                    </p>
+                    <p className="text-sm text-gray-500">Revenue</p>
+                    <div className="flex items-center">
+                      <div className="text-sm font-medium text-gray-600">
+                        Contact admin for details
+                      </div>
+                      <div className="ml-1 relative inline-block">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-400 cursor-help group">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM8.94 6.94a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm-.25 3.75a.75.75 0 01.75-.75h.01a.75.75 0 01.75.75v3.5a.75.75 0 01-.75.75h-.01a.75.75 0 01-.75-.75v-3.5z" clipRule="evenodd" />
+                          <title>Revenue calculations factor in multiple instructors and discount codes. Please contact administration for accurate figures.</title>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

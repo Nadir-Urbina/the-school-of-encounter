@@ -123,7 +123,7 @@ export default async function Home() {
           </h1>
           <p className="text-xl md:text-2xl mb-12 text-blue-100 max-w-2xl mx-auto
                         opacity-0 animate-fade-in-up animation-delay-200">
-            Equipping you for spiritual growth and kingdom impact
+            Equipping you for Spiritual Growth and Kingdom Impact
           </p>
           <Link 
             href="/courses" 

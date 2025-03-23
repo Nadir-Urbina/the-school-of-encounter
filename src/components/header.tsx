@@ -36,7 +36,7 @@ export default function Header() {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="text-xl font-bold text-gray-800">
-              School of Encounter
+              The School of Encounter
             </Link>
           </div>
 
@@ -105,6 +105,14 @@ export default function Header() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
+            {!user && (
+              <Link 
+                href="/auth/login" 
+                className="mr-2 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1.5 rounded-md text-sm font-medium"
+              >
+                Sign In
+              </Link>
+            )}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
