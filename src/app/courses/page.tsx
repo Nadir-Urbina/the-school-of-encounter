@@ -2,6 +2,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { client, urlFor } from '@/lib/sanity'
 
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = "force-dynamic";
+
 interface Course {
   _id: string
   title: string

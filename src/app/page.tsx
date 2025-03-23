@@ -8,6 +8,9 @@ import Link from 'next/link'
 import { client, urlFor } from '@/lib/sanity'
 import ContactForm from '@/components/ContactForm'
 
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = "force-dynamic";
+
 // Helper function to format dates
 function formatDate(dateString: string | undefined): string {
   if (!dateString) return '';

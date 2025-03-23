@@ -1,5 +1,8 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = "force-dynamic";
+
 const faqs = [
   {
     question: "What is the School of Encounter?",
