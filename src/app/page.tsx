@@ -136,7 +136,7 @@ export default async function Home() {
       {/* Featured Courses - Enhanced with card design */}
       <section className="py-20 bg-gradient-to-b from-slate-50 to-slate-100">
         <div className="container mx-auto px-4">
-          <h2 className="font-heading text-4xl font-bold text-center mb-4">
+          <h2 className="font-heading text-4xl font-bold text-center mb-4 text-gray-900">
             Featured Courses
           </h2>
           <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
@@ -237,7 +237,7 @@ export default async function Home() {
       {/* Testimonials - Enhanced with modern card design */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold mb-4 text-center">What Our Students Say</h2>
+          <h2 className="text-4xl font-bold mb-4 text-center text-gray-900">What Our Students Say</h2>
           <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
             Real experiences from our community of learners
           </p>
@@ -280,7 +280,7 @@ export default async function Home() {
       {/* Instructors Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center">Our Expert Teachers</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Our Expert Teachers</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {instructors.map((instructor) => (
               <div key={instructor._id} className="relative group">
@@ -323,7 +323,7 @@ export default async function Home() {
       {/* Why Choose Us Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-12 text-center">Why Choose The School of Encounter</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center text-gray-900">Why Choose The School of Encounter</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="text-center p-6">
               <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
@@ -368,7 +368,7 @@ export default async function Home() {
       {/* FAQ Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center text-gray-900">Frequently Asked Questions</h2>
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold mb-2">How do the online courses work?</h3>
