@@ -10,6 +10,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 export async function POST(req: Request) {
+  console.log('Webhook received')
   const body = await req.text()
   const headersList = await headers()
   const signature = headersList.get('stripe-signature') ?? ''
@@ -20,7 +21,15 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
-    return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 })
+    return new NextResponse(
+      JSON.stringify({ error: 'Webhook signature verification failed' }),
+      { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
   }
 
   if (event.type === 'checkout.session.completed') {
@@ -68,12 +77,30 @@ export async function POST(req: Request) {
         userId,
         sessionId: session.id
       })
-      return NextResponse.json({ 
-        error: 'Error updating enrollment',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, { status: 500 })
+      
+      return new NextResponse(
+        JSON.stringify({ 
+          error: 'Error updating enrollment',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        }),
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
   }
 
-  return NextResponse.json({ received: true })
+  console.log('Webhook processed successfully')
+  return new NextResponse(
+    JSON.stringify({ received: true }),
+    { 
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    }
+  )
 } 

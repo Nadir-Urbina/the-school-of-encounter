@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       mode: 'payment',
       allow_promotion_codes: true, // Enable promotion code field in Stripe checkout
       success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payment-success?session_id={CHECKOUT_SESSION_ID}&courseId=${courseId}&userId=${userId}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/courses/${courseId}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
       customer_email: email,
       metadata: {
         courseId,
