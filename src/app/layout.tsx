@@ -3,6 +3,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import ConditionalLayout from '@/components/ConditionalLayout'
+import { Analytics } from '@vercel/analytics/react'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -27,6 +28,7 @@ export default function RootLayout({
             {children}
           </ConditionalLayout>
           <Toaster position="bottom-right" />
+          <Analytics />
         </AuthProvider>
       </body>
     </html>
