@@ -442,18 +442,52 @@ export default function CourseLearnPage({
           </div>
 
           {/* Video Player */}
-          <div className="aspect-video bg-black rounded-lg overflow-hidden">
+          <div className="relative aspect-video bg-black rounded-lg overflow-hidden group">
             {currentLesson?.videoId ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${currentLesson.videoId}`}
-                className="w-full h-full"
-                title={currentLesson.title || 'Video lesson'}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              <>
+                <iframe
+                  src={`https://www.youtube.com/embed/${currentLesson.videoId}?enablejsapi=1&rel=0&modestbranding=1`}
+                  className="w-full h-full"
+                  title={currentLesson.title || 'Video lesson'}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+                
+                {/* Video Overlay Controls */}
+                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button
+                    onClick={() => {
+                      // Copy video link
+                      navigator.clipboard.writeText(window.location.href)
+                      toast.success('Video link copied!', { duration: 2000 })
+                    }}
+                    className="bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-lg transition-all"
+                    title="Copy link"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* Video Info Overlay */}
+                <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="text-sm font-medium">{currentLesson.title}</div>
+                  {currentLesson.duration && (
+                    <div className="text-xs text-gray-300">Duration: {currentLesson.duration} min</div>
+                  )}
+                </div>
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <span className="text-gray-400">No video available</span>
+                <div className="text-center">
+                  <div className="text-gray-400 mb-2">
+                    <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-gray-400">No video available for this lesson</span>
+                </div>
               </div>
             )}
           </div>
@@ -468,38 +502,126 @@ export default function CourseLearnPage({
                 </span>
               )}
             </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={markLessonCompleted}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  lessonProgress?.completed
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
+              >
+                <CheckCircle2 size={16} />
+                {lessonProgress?.completed ? 'Completed' : 'Mark Complete'}
+              </button>
+            </div>
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="mt-4 flex justify-between items-center">
             <button
-              onClick={markLessonCompleted}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                lessonProgress?.completed
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-indigo-600 hover:bg-indigo-700'
-              }`}
+              onClick={() => {
+                const allLessons = course.modules.flatMap(m => m.lessons)
+                const currentIndex = allLessons.findIndex(l => l._id === currentLesson._id)
+                if (currentIndex > 0) {
+                  setCurrentLesson(allLessons[currentIndex - 1])
+                }
+              }}
+              disabled={course.modules.flatMap(m => m.lessons).findIndex(l => l._id === currentLesson._id) === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <CheckCircle2 size={16} />
-              {lessonProgress?.completed ? 'Completed' : 'Mark Complete'}
+              <span>←</span> Previous Lesson
+            </button>
+            
+            <div className="text-center">
+              <span className="text-sm text-gray-400">
+                Lesson {course.modules.flatMap(m => m.lessons).findIndex(l => l._id === currentLesson._id) + 1} of {course.modules.flatMap(m => m.lessons).length}
+              </span>
+            </div>
+            
+            <button
+              onClick={() => {
+                const allLessons = course.modules.flatMap(m => m.lessons)
+                const currentIndex = allLessons.findIndex(l => l._id === currentLesson._id)
+                if (currentIndex < allLessons.length - 1) {
+                  setCurrentLesson(allLessons[currentIndex + 1])
+                }
+              }}
+              disabled={course.modules.flatMap(m => m.lessons).findIndex(l => l._id === currentLesson._id) === course.modules.flatMap(m => m.lessons).length - 1}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next Lesson <span>→</span>
             </button>
           </div>
 
           {/* Notes Section */}
           <div className="mt-6 bg-gray-800 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center mb-3">
               <h3 className="text-lg font-semibold">Notes</h3>
-              <span className="text-xs text-gray-400">Notes are saved automatically with your course progress</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">Auto-saved with progress</span>
+                {notes.length > 0 && (
+                  <span className="text-xs bg-gray-700 px-2 py-1 rounded">
+                    {notes.length} characters
+                  </span>
+                )}
+              </div>
             </div>
-            <textarea
-              className="w-full h-32 bg-gray-700 text-white rounded-lg p-3 resize-none mb-2"
-              placeholder="Take notes here..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            ></textarea>
-            <button
-              onClick={saveNotes}
-              disabled={savingNotes}
-              className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg disabled:opacity-50"
-            >
-              {savingNotes ? 'Saving...' : 'Save Notes'}
-            </button>
+            
+            {/* Notes Input with Enhanced UI */}
+            <div className="bg-gray-700 rounded-lg p-1">
+              <textarea
+                className="w-full h-32 bg-transparent text-white p-3 resize-none focus:outline-none"
+                placeholder={`Take notes for "${currentLesson.title}"...\n\nTip: Save important timestamps or key concepts here.`}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              ></textarea>
+              
+              <div className="flex justify-between items-center px-3 pb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                      setNotes(prev => prev + (prev ? '\n\n' : '') + `[${timestamp}] `)
+                    }}
+                    className="text-xs bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-gray-300"
+                  >
+                    + Timestamp
+                  </button>
+                  <button
+                    onClick={() => setNotes('')}
+                    className="text-xs text-gray-400 hover:text-gray-300"
+                    disabled={!notes}
+                  >
+                    Clear
+                  </button>
+                </div>
+                
+                <button
+                  onClick={saveNotes}
+                  disabled={savingNotes}
+                  className="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg disabled:opacity-50 text-sm font-medium"
+                >
+                  {savingNotes ? 'Saving...' : 'Save Notes'}
+                </button>
+              </div>
+            </div>
+            
+            {/* Quick Note Templates */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {['Key Point', 'Question', 'Action Item', 'Important'].map((template) => (
+                <button
+                  key={template}
+                  onClick={() => {
+                    const addition = notes ? '\n\n' : ''
+                    setNotes(prev => prev + addition + `${template}: `)
+                  }}
+                  className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-gray-300"
+                >
+                  + {template}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -521,39 +643,78 @@ export default function CourseLearnPage({
           <div className="h-full overflow-y-auto p-4">
             <h3 className="text-xl font-bold mb-4">{course.title}</h3>
             <div className="space-y-4">
-              {course.modules.map((module) => (
-                <div key={module._id}>
-                  <h4 className="font-medium text-gray-300 mb-2">{module.title}</h4>
-                  <div className="space-y-1">
-                    {module.lessons.map((lesson) => (
-                      <button
-                        key={lesson._id}
-                        onClick={() => {
-                          setCurrentLesson(lesson)
-                          setIsSidebarOpen(false) // Close sidebar on mobile after selection
-                        }}
-                        className={`w-full text-left p-2 rounded flex justify-between items-center ${
-                          currentLesson._id === lesson._id
-                            ? 'bg-indigo-600'
-                            : 'hover:bg-gray-700'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          {lesson.completed && (
-                            <CheckCircle className="text-green-500 mr-2" size={14} />
+              {course.modules.map((module, moduleIndex) => {
+                const moduleProgress = {
+                  completed: module.lessons.filter(l => l.completed).length,
+                  total: module.lessons.length
+                }
+                const modulePercentage = moduleProgress.total > 0 ? (moduleProgress.completed / moduleProgress.total) * 100 : 0
+                
+                return (
+                  <div key={module._id} className="bg-gray-750 rounded-lg p-3">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-medium text-white">{module.title}</h4>
+                      <span className="text-xs text-gray-400">
+                        {moduleProgress.completed}/{moduleProgress.total}
+                      </span>
+                    </div>
+                    
+                    {/* Module Progress Bar */}
+                    <div className="w-full bg-gray-600 rounded-full h-1.5 mb-3">
+                      <div 
+                        className="bg-indigo-500 h-1.5 rounded-full transition-all duration-300" 
+                        style={{ width: `${modulePercentage}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      {module.lessons.map((lesson, lessonIndex) => (
+                        <button
+                          key={lesson._id}
+                          onClick={() => {
+                            setCurrentLesson(lesson)
+                            setIsSidebarOpen(false) // Close sidebar on mobile after selection
+                          }}
+                          className={`w-full text-left p-3 rounded-lg flex justify-between items-center transition-all duration-200 ${
+                            currentLesson._id === lesson._id
+                              ? 'bg-indigo-600 shadow-lg'
+                              : lesson.completed
+                              ? 'bg-gray-700 hover:bg-gray-650'
+                              : 'hover:bg-gray-700'
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <div className="flex items-center justify-center w-6 h-6 mr-3">
+                              {lesson.completed ? (
+                                <CheckCircle className="text-green-500" size={16} />
+                              ) : (
+                                <div className={`w-2 h-2 rounded-full ${
+                                  currentLesson._id === lesson._id ? 'bg-white' : 'bg-gray-500'
+                                }`} />
+                              )}
+                            </div>
+                            <div>
+                              <span className={`text-sm ${
+                                currentLesson._id === lesson._id ? 'text-white font-medium' : 'text-gray-200'
+                              }`}>
+                                {lesson.title}
+                              </span>
+                              <div className="text-xs text-gray-400 mt-1">
+                                Lesson {moduleIndex + 1}.{lessonIndex + 1}
+                              </div>
+                            </div>
+                          </div>
+                          {lesson.duration && (
+                            <span className="text-xs text-gray-400 ml-2">
+                              {lesson.duration}m
+                            </span>
                           )}
-                          <span className="text-sm">{lesson.title}</span>
-                        </div>
-                        {lesson.duration && (
-                          <span className="text-xs text-gray-400 ml-2">
-                            {lesson.duration}m
-                          </span>
-                        )}
-                      </button>
-                    ))}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>

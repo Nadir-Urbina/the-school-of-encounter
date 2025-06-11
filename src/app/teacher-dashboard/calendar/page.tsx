@@ -55,22 +55,33 @@ export default function TeacherCalendar() {
     recurringPattern: 'monthly'
   })
 
-  // Check if user is logged in and is an instructor
+  // Check if user is logged in and is an instructor or admin
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && (!user || (user.role !== 'teacher' && user.role !== 'admin'))) {
       router.push('/auth/login')
     }
   }, [user, loading, router])
 
-  // Fetch instructor's courses and Q&A events
+  // Fetch instructor's courses and Q&A events (or all courses/events for admin)
   useEffect(() => {
     if (user?.uid) {
-      // Fetch courses taught by this instructor
+      // Fetch courses taught by this instructor or all courses for admin
       const fetchCourses = async () => {
-        const query = `*[_type == "course" && references(*[_type == "instructor" && firebaseUID == $uid]._id)] {
-          _id,
-          title
-        }`
+        let query = ''
+        
+        if (user.role === 'admin') {
+          // Admin can see all courses
+          query = `*[_type == "course"] {
+            _id,
+            title
+          }`
+        } else {
+          // Teacher can only see their own courses
+          query = `*[_type == "course" && references(*[_type == "instructor" && firebaseUID == $uid]._id)] {
+            _id,
+            title
+          }`
+        }
         
         try {
           const result = await client.fetch<Course[]>(query, { uid: user.uid })
@@ -80,18 +91,35 @@ export default function TeacherCalendar() {
         }
       }
 
-      // Fetch Q&A events for this instructor
+      // Fetch Q&A events for this instructor or all events for admin
       const fetchEvents = async () => {
-        const query = `*[_type == "qaEvent" && instructor->firebaseUID == $uid] {
-          _id,
-          title,
-          startDateTime,
-          endDateTime,
-          description,
-          meetingLink,
-          "course": course->{_id, title},
-          "instructor": instructor->{_id, name}
-        }`
+        let query = ''
+        
+        if (user.role === 'admin') {
+          // Admin can see all Q&A events
+          query = `*[_type == "qaEvent"] {
+            _id,
+            title,
+            startDateTime,
+            endDateTime,
+            description,
+            meetingLink,
+            "course": course->{_id, title},
+            "instructor": instructor->{_id, name}
+          }`
+        } else {
+          // Teacher can only see their own events
+          query = `*[_type == "qaEvent" && instructor->firebaseUID == $uid] {
+            _id,
+            title,
+            startDateTime,
+            endDateTime,
+            description,
+            meetingLink,
+            "course": course->{_id, title},
+            "instructor": instructor->{_id, name}
+          }`
+        }
         
         try {
           const result = await client.fetch<QAEvent[]>(query, { uid: user.uid })
@@ -162,16 +190,33 @@ export default function TeacherCalendar() {
       
       // Refresh events
       const fetchEvents = async () => {
-        const query = `*[_type == "qaEvent" && instructor->firebaseUID == $uid] {
-          _id,
-          title,
-          startDateTime,
-          endDateTime,
-          description,
-          meetingLink,
-          "course": course->{_id, title},
-          "instructor": instructor->{_id, name}
-        }`
+        let query = ''
+        
+        if (user.role === 'admin') {
+          // Admin can see all Q&A events
+          query = `*[_type == "qaEvent"] {
+            _id,
+            title,
+            startDateTime,
+            endDateTime,
+            description,
+            meetingLink,
+            "course": course->{_id, title},
+            "instructor": instructor->{_id, name}
+          }`
+        } else {
+          // Teacher can only see their own events
+          query = `*[_type == "qaEvent" && instructor->firebaseUID == $uid] {
+            _id,
+            title,
+            startDateTime,
+            endDateTime,
+            description,
+            meetingLink,
+            "course": course->{_id, title},
+            "instructor": instructor->{_id, name}
+          }`
+        }
         
         try {
           const result = await client.fetch<QAEvent[]>(query, { uid: user.uid })
@@ -220,7 +265,9 @@ export default function TeacherCalendar() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold">Manage Q&A Sessions</h1>
+        <h1 className="text-3xl font-bold">
+          {user?.role === 'admin' ? 'Calendar Administration' : 'Manage Q&A Sessions'}
+        </h1>
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
           <DialogTrigger asChild>
             <Button className="w-full md:w-auto">Schedule New Q&A Session</Button>

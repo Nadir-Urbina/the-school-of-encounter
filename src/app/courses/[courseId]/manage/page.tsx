@@ -107,8 +107,8 @@ export default function CourseManagePage({
           // Using the same query structure as in other parts of the application
           const completionResult = await client.fetch(`
             *[_type == "lessonProgress" && course._ref == $courseId && completed == true] {
-              user._ref,
-              lesson._ref
+              "userId": user._ref,
+              "lessonId": lesson._ref
             }
           `, { courseId: resolvedParams.courseId });
           
@@ -125,10 +125,10 @@ export default function CourseManagePage({
           // Create a map of student to completed lessons
           const studentProgress = {};
           completedLessonsData.forEach(progress => {
-            if (!studentProgress[progress.user._ref]) {
-              studentProgress[progress.user._ref] = new Set();
+            if (!studentProgress[progress.userId]) {
+              studentProgress[progress.userId] = new Set();
             }
-            studentProgress[progress.user._ref].add(progress.lesson._ref);
+            studentProgress[progress.userId].add(progress.lessonId);
           });
 
           // Calculate the average completion percentage across all students

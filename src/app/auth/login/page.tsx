@@ -17,7 +17,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
-  const { signInWithGoogle } = useAuth()
+  const { signInWithGoogle, user } = useAuth()
+
+  // Redirect when user is authenticated
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,15 +42,14 @@ export default function LoginPage() {
       
       if (profile) {
         console.log('Login successful, profile found:', profile)
-        router.push('/dashboard')
-        router.refresh()
+        // Don't manually redirect - let the useEffect handle it when user state changes
       } else {
         setError('User profile not found')
+        setLoading(false)
       }
     } catch (err: any) {
       console.error('Login error:', err)
       setError(err.message || 'Failed to sign in')
-    } finally {
       setLoading(false)
     }
   }
@@ -56,12 +62,13 @@ export default function LoginPage() {
   }
 
   const handleGoogleSignIn = async () => {
+    setError('')
     try {
       await signInWithGoogle()
-      router.push('/dashboard')
-      router.refresh()
+      // Don't manually redirect - let the useEffect handle it when user state changes
     } catch (error) {
       console.error('Google sign in error:', error)
+      setError('Failed to sign in with Google')
     }
   }
 

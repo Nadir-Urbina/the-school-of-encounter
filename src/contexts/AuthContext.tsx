@@ -48,13 +48,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         Cookies.remove('user')
       }
       setLoading(false)
-      
-      // Force a refresh when auth state changes
-      router.refresh()
     })
 
     return () => unsubscribe()
-  }, [router])
+  }, [])
 
   const logout = async () => {
     try {

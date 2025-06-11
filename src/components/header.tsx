@@ -62,6 +62,34 @@ export default function Header() {
                 >
                   Dashboard
                 </Link>
+                {user.role === 'admin' && (
+                  <>
+                    <Link 
+                      href="/admin" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Admin Dashboard
+                    </Link>
+                    <Link 
+                      href="/admin/courses" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Manage Courses
+                    </Link>
+                    <Link 
+                      href="/admin/users" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Manage Users
+                    </Link>
+                    <Link 
+                      href="/admin/calendar" 
+                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Calendar Admin
+                    </Link>
+                  </>
+                )}
                 {user.role === 'teacher' && (
                   <>
                     <Link 
@@ -182,6 +210,38 @@ export default function Header() {
               >
                 Dashboard
               </Link>
+              {user.role === 'admin' && (
+                <>
+                  <Link 
+                    href="/admin" 
+                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Admin Dashboard
+                  </Link>
+                  <Link 
+                    href="/admin/courses" 
+                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Manage Courses
+                  </Link>
+                  <Link 
+                    href="/admin/users" 
+                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Manage Users
+                  </Link>
+                  <Link 
+                    href="/admin/calendar" 
+                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Calendar Admin
+                  </Link>
+                </>
+              )}
               {user.role === 'teacher' && (
                 <>
                   <Link 
