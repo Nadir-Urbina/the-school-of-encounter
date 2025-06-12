@@ -446,7 +446,7 @@ export default function CourseLearnPage({
             {currentLesson?.videoId ? (
               <>
                 <iframe
-                  src={`https://www.youtube.com/embed/${currentLesson.videoId}?enablejsapi=1&rel=0&modestbranding=1`}
+                  src={`https://www.youtube.com/embed/${currentLesson.videoId}?enablejsapi=1&rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=1&fs=0&iv_load_policy=3`}
                   className="w-full h-full"
                   title={currentLesson.title || 'Video lesson'}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

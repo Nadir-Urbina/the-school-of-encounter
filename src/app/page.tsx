@@ -62,6 +62,33 @@ interface Testimonial {
   image: any
 }
 
+export const metadata = {
+  title: "The School of Encounter",
+  description: "Experience transformative learning at The School of Encounter.",
+  openGraph: {
+    title: "The School of Encounter",
+    description: "Experience transformative learning at The School of Encounter.",
+    url: "https://theschoolofencounter.com/",
+    siteName: "The School of Encounter",
+    images: [
+      {
+        url: "/HERO%20Image%20TSOE.png", // Local path to your hero image in /public
+        width: 1200,
+        height: 630,
+        alt: "The School of Encounter Hero Image",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The School of Encounter",
+    description: "Experience transformative learning at The School of Encounter.",
+    images: ["/HERO%20Image%20TSOE.png"],
+  },
+}
+
 export default async function Home() {
   // Fetch data from Sanity
   const courses = await client.fetch<Course[]>(`

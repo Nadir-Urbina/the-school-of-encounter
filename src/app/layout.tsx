@@ -15,6 +15,14 @@ const montserrat = Montserrat({
   variable: '--font-montserrat'
 })
 
+export const metadata = {
+  title: 'The School of Encounter',
+  description: 'Experience transformative learning at The School of Encounter.',
+  icons: {
+    icon: '/favicon.ico',
+  },
+}
+
 export default function RootLayout({
   children,
 }: {
