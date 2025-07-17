@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
     
     // Send email using Resend
     const data = await resend.emails.send({
-      from: 'Contact Form <contact@eastgatejax.com>', // Using the verified domain
-      to: process.env.CONTACT_EMAIL_RECIPIENT || 'nurbinabr@eastgatejax.com', // Can now send to any recipient
+      from: 'Contact Form <contact@theschoolofencounter.com>', // Updated to use the correct domain
+      to: process.env.CONTACT_EMAIL_RECIPIENT || 'info@theschoolofencounter.com', // Updated to use the correct domain
       subject: `New contact from ${name}`,
       text: `
         Name: ${name}
