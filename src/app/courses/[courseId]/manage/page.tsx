@@ -33,6 +33,14 @@ interface Course {
   averageRating?: number
 }
 
+interface EnrolledStudent {
+  _id: string
+  email: string
+  name: string
+  enrolledAt: string
+  status: string
+}
+
 export default function CourseManagePage({ 
   params 
 }: { 
@@ -43,6 +51,7 @@ export default function CourseManagePage({
   const { user, loading } = useAuth()
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
+  const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([])
   const [loadingCourse, setLoadingCourse] = useState(true)
 
   useEffect(() => {
@@ -141,6 +150,37 @@ export default function CourseManagePage({
           // Average completion rate (rounded to nearest integer)
           completionRate = Math.round(totalCompletionPercentage / studentCount);
         }
+
+        // Fetch enrolled students data
+        let studentsData;
+        try {
+          studentsData = await client.fetch(`
+            *[_type == "enrollment" && course._ref == $courseId] {
+              _id,
+              enrolledAt,
+              status,
+              "student": student-> {
+                _id,
+                email,
+                name
+              }
+            } | order(enrolledAt desc)
+          `, { courseId: resolvedParams.courseId });
+        } catch (studentsError) {
+          console.error('Error fetching enrolled students:', studentsError);
+          studentsData = [];
+        }
+
+        // Transform the students data
+        const enrolledStudentsData = (studentsData || []).map(enrollment => ({
+          _id: enrollment._id,
+          email: enrollment.student?.email || 'N/A',
+          name: enrollment.student?.name || 'Unknown',
+          enrolledAt: enrollment.enrolledAt,
+          status: enrollment.status || 'active'
+        }));
+
+        setEnrolledStudents(enrolledStudentsData);
 
         // Merge the stats with the course data
         const enrichedCourse = {
@@ -262,7 +302,7 @@ export default function CourseManagePage({
           </div>
 
           {/* Course Content */}
-          <div className="p-6 sm:p-8">
+          <div className="p-6 sm:p-8 border-b">
             <h2 className="text-xl font-semibold mb-6">Course Content</h2>
             <div className="space-y-6">
               {(course.modules || []).map((module) => (
@@ -291,6 +331,76 @@ export default function CourseManagePage({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Enrolled Students */}
+          <div className="p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Enrolled Students</h2>
+              <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                {enrolledStudents.length} student{enrolledStudents.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            
+            {enrolledStudents.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+                <p className="text-lg font-medium mb-2">No students enrolled yet</p>
+                <p className="text-sm">Students will appear here once they enroll in your course.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {enrolledStudents.map((student) => (
+                  <div 
+                    key={student._id}
+                    className="bg-gray-50 rounded-lg p-4 border hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                              <span className="text-indigo-600 font-medium text-sm">
+                                {student.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {student.name}
+                            </p>
+                            <p className="text-sm text-gray-600 truncate">
+                              {student.email}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500">Enrolled</p>
+                          <p className="text-sm text-gray-900">
+                            {student.enrolledAt ? new Date(student.enrolledAt).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            student.status === 'active' 
+                              ? 'bg-green-100 text-green-800' 
+                              : student.status === 'completed'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {student.status || 'active'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

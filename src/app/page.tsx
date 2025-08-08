@@ -189,7 +189,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Enhanced Hero Section */}
-      <section className="relative h-[80vh] flex items-center bg-gradient-to-br from-blue-900 via-purple-800 to-indigo-900 text-white overflow-hidden">
+      <section className="relative h-[80vh] flex items-center bg-gradient-to-br from-blue-900 via-purple-800 to-indigo-900 text-white overflow-visible">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -210,13 +210,13 @@ export default async function Home() {
         </div>
 
         <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center overflow-visible">
             {/* Enhanced Headlines */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-relaxed pb-4" style={{ lineHeight: '1.2' }}>
               <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-purple-200">
                 An Encounter-First Approach
               </span>
-              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-purple-200 via-blue-100 to-white">
+              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-purple-200 via-blue-100 to-white pb-1">
                 To Learning
               </span>
             </h1>
