@@ -23,6 +23,9 @@ interface Course {
     lessons: any[]
   }> | null
   _createdAt: string
+  slug?: {
+    current: string
+  }
 }
 
 export default function AdminCoursesPage() {
@@ -57,6 +60,7 @@ export default function AdminCoursesPage() {
           publishedAt,
           featuredCourse,
           _createdAt,
+          slug,
           "instructors": instructors[]-> {
             name,
             _id
@@ -304,7 +308,7 @@ export default function AdminCoursesPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <Link
-                          href={`/courses/${course._id}`}
+                          href={`/learn/${course.slug?.current || course._id}`}
                           className="text-indigo-600 hover:text-indigo-900"
                         >
                           View

@@ -569,7 +569,7 @@ export default function CourseLearnPage({
           *[_type == "userProfile" && firebaseUID == $userId][0]._id
         `, { userId: user!.uid })
 
-        // Then check if the user is enrolled in this course
+        // Then check if the user is enrolled in this course or is an admin
         const enrollment = await client.fetch(`
           *[_type == "enrollment" && student._ref == $userDocId && course->slug.current == $courseId][0]
         `, { 
@@ -577,7 +577,8 @@ export default function CourseLearnPage({
           courseId: resolvedParams.courseId 
         })
 
-        if (!enrollment) {
+        // Allow access if user is enrolled OR if user is an admin
+        if (!enrollment && user.role !== 'admin') {
           router.replace('/dashboard')
           return
         }
