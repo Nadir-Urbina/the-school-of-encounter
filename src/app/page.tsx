@@ -189,7 +189,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Enhanced Hero Section */}
-      <section className="relative h-[80vh] flex items-center bg-gradient-to-br from-blue-900 via-purple-800 to-indigo-900 text-white overflow-visible">
+      <section className="relative h-[80vh] flex items-center bg-gradient-to-br from-blue-900 via-purple-800 to-indigo-900 text-white overflow-visible pt-16">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
@@ -209,10 +209,10 @@ export default async function Home() {
           <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="container mx-auto px-4 py-20 relative z-10">
+        <div className="container mx-auto px-4 py-8 sm:py-12 md:py-20 relative z-10">
           <div className="max-w-4xl mx-auto text-center overflow-visible">
             {/* Enhanced Headlines */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-relaxed pb-4" style={{ lineHeight: '1.2' }}>
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight sm:leading-relaxed pb-2 sm:pb-4" style={{ lineHeight: '1.2' }}>
               <span className="block bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-purple-200">
                 An Encounter-First Approach
               </span>
@@ -221,12 +221,12 @@ export default async function Home() {
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl lg:text-3xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl mb-6 sm:mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
               Join hundreds of students in life-changing education with expert instructors that live what they teach.
             </p>
 
-            <div className="mb-12 text-lg text-blue-200">
-              <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+            <div className="mb-8 sm:mb-12 text-base sm:text-lg text-blue-200">
+              <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8">
                 <div className="flex items-center">
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
