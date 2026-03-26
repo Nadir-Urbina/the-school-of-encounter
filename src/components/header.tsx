@@ -1,296 +1,179 @@
 'use client'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useState } from 'react'
+import {
+  BookOpen, Calendar, LayoutDashboard, Shield, Users,
+  GraduationCap, MessageSquare, LogOut, LogIn, UserPlus,
+  BookMarked, CalendarDays, X, Menu
+} from 'lucide-react'
 
-export default function Header() {
+interface NavItem {
+  href: string
+  label: string
+  icon: React.ReactNode
+}
+
+export default function Sidebar() {
   const { user, logout } = useAuth()
   const router = useRouter()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  const handleDashboardClick = () => {
-    if (user?.role === 'teacher') {
-      router.push('/teacher-dashboard')
-    } else {
-      router.push('/dashboard')
-    }
-  }
+  const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
       await logout()
-      // Force navigation to login page after logout
       router.push('/auth/login')
-      // Force a refresh of the page to ensure clean state
       router.refresh()
     } catch (error) {
       console.error('Logout error:', error)
     }
   }
 
+  const isActive = (href: string) => pathname === href || pathname?.startsWith(href + '/')
+
+  const linkClass = (href: string) =>
+    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+      isActive(href)
+        ? 'bg-indigo-50 text-indigo-700'
+        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+    }`
+
+  const publicLinks: NavItem[] = [
+    { href: '/courses', label: 'Courses', icon: <BookOpen size={18} /> },
+    { href: '/calendar', label: 'Q&A Calendar', icon: <Calendar size={18} /> },
+  ]
+
+  const studentLinks: NavItem[] = [
+    { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+  ]
+
+  const adminLinks: NavItem[] = [
+    { href: '/admin', label: 'Admin Dashboard', icon: <Shield size={18} /> },
+    { href: '/admin/courses', label: 'Manage Courses', icon: <BookMarked size={18} /> },
+    { href: '/admin/users', label: 'Manage Users', icon: <Users size={18} /> },
+    { href: '/admin/calendar', label: 'Calendar Admin', icon: <CalendarDays size={18} /> },
+  ]
+
+  const teacherLinks: NavItem[] = [
+    { href: '/teacher-dashboard', label: 'Teacher Dashboard', icon: <GraduationCap size={18} /> },
+    { href: '/teacher-dashboard/calendar', label: 'Manage Q&A', icon: <MessageSquare size={18} /> },
+  ]
+
+  const navLinks = (onNavigate?: () => void) => {
+    const links: NavItem[] = [
+      ...publicLinks,
+      ...(user ? studentLinks : []),
+      ...(user?.role === 'admin' ? adminLinks : []),
+      ...(user?.role === 'teacher' ? teacherLinks : []),
+    ]
+
+    return links.map(({ href, label, icon }) => (
+      <Link key={href} href={href} className={linkClass(href)} onClick={onNavigate}>
+        {icon}
+        {label}
+      </Link>
+    ))
+  }
+
+  const userInitial = user?.displayName?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || '?'
+
+  const sidebarContent = (onNavigate?: () => void) => (
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      <div className="px-5 py-6 border-b border-gray-100">
+        <Link href="/" onClick={onNavigate}>
+          <h1 className="text-base font-bold text-gray-900 leading-tight">
+            The School<br />of Encounter
+          </h1>
+        </Link>
+      </div>
+
+      {/* User info */}
+      {user && (
+        <div className="px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-indigo-700 font-semibold text-sm">{userInitial}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {user.displayName || 'User'}
+              </p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nav links */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        {navLinks(onNavigate)}
+      </nav>
+
+      {/* Bottom */}
+      <div className="px-3 py-4 border-t border-gray-100 space-y-0.5">
+        {user ? (
+          <button
+            onClick={() => { handleLogout(); onNavigate?.() }}
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
+        ) : (
+          <>
+            <Link href="/auth/login" className={linkClass('/auth/login')} onClick={onNavigate}>
+              <LogIn size={18} /> Login
+            </Link>
+            <Link href="/auth/signup" className={linkClass('/auth/signup')} onClick={onNavigate}>
+              <UserPlus size={18} /> Sign Up
+            </Link>
+          </>
+        )}
+      </div>
+    </div>
+  )
+
   return (
-    <header className="bg-white shadow-sm relative z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo and Brand */}
-          <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold text-gray-800">
-              The School of Encounter
-            </Link>
-          </div>
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex fixed top-0 left-0 h-full w-60 bg-white border-r border-gray-200 flex-col z-40">
+        {sidebarContent()}
+      </aside>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-4">
-            <Link 
-              href="/courses" 
-              className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Courses
-            </Link>
-            <Link 
-              href="/calendar" 
-              className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              Q&A Calendar
-            </Link>
-            {user ? (
-              <>
-                <Link 
-                  href="/dashboard" 
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Dashboard
-                </Link>
-                {user.role === 'admin' && (
-                  <>
-                    <Link 
-                      href="/admin" 
-                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Admin Dashboard
-                    </Link>
-                    <Link 
-                      href="/admin/courses" 
-                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Manage Courses
-                    </Link>
-                    <Link 
-                      href="/admin/users" 
-                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Manage Users
-                    </Link>
-                    <Link 
-                      href="/admin/calendar" 
-                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Calendar Admin
-                    </Link>
-                  </>
-                )}
-                {user.role === 'teacher' && (
-                  <>
-                    <Link 
-                      href="/teacher-dashboard" 
-                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Teacher Dashboard
-                    </Link>
-                    <Link 
-                      href="/teacher-dashboard/calendar" 
-                      className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      Manage Q&A
-                    </Link>
-                  </>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link 
-                  href="/auth/login" 
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Login
-                </Link>
-                <Link 
-                  href="/auth/signup" 
-                  className="bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
-          </nav>
+      {/* Mobile top bar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 h-14 flex items-center justify-between px-4">
+        <Link href="/" className="text-base font-bold text-gray-900">
+          The School of Encounter
+        </Link>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+        >
+          <Menu size={22} />
+        </button>
+      </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            {!user && (
-              <Link 
-                href="/auth/login" 
-                className="mr-2 bg-indigo-600 text-white hover:bg-indigo-700 px-3 py-1.5 rounded-md text-sm font-medium"
-              >
-                Sign In
-              </Link>
-            )}
+      {/* Mobile drawer */}
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-50 md:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+          <aside className="fixed top-0 left-0 h-full w-72 bg-white z-50 md:hidden shadow-xl">
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-              aria-expanded="false"
+              onClick={() => setIsOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
             >
-              <span className="sr-only">Open main menu</span>
-              {/* Hamburger icon */}
-              {!isMenuOpen ? (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="block h-6 w-6"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              )}
+              <X size={20} />
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden`}>
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <Link 
-            href="/courses" 
-            className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Courses
-          </Link>
-          <Link 
-            href="/calendar" 
-            className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Q&A Calendar
-          </Link>
-          {user ? (
-            <>
-              <Link 
-                href="/dashboard" 
-                className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-              {user.role === 'admin' && (
-                <>
-                  <Link 
-                    href="/admin" 
-                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Admin Dashboard
-                  </Link>
-                  <Link 
-                    href="/admin/courses" 
-                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Manage Courses
-                  </Link>
-                  <Link 
-                    href="/admin/users" 
-                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Manage Users
-                  </Link>
-                  <Link 
-                    href="/admin/calendar" 
-                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Calendar Admin
-                  </Link>
-                </>
-              )}
-              {user.role === 'teacher' && (
-                <>
-                  <Link 
-                    href="/teacher-dashboard" 
-                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Teacher Dashboard
-                  </Link>
-                  <Link 
-                    href="/teacher-dashboard/calendar" 
-                    className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Manage Q&A
-                  </Link>
-                </>
-              )}
-              <button
-                onClick={() => {
-                  handleLogout()
-                  setIsMenuOpen(false)
-                }}
-                className="block w-full text-left text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link 
-                href="/auth/login" 
-                className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link 
-                href="/auth/signup" 
-                className="block text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Sign Up
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
-    </header>
+            {sidebarContent(() => setIsOpen(false))}
+          </aside>
+        </>
+      )}
+    </>
   )
 }
-

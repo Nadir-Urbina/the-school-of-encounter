@@ -9,14 +9,16 @@ export default function ConditionalLayout({
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname();
-  const isStudioPath = pathname?.startsWith('/studio');
+  const pathname = usePathname()
+  const hideSidebar = pathname?.startsWith('/studio') || pathname?.startsWith('/learn')
 
   return (
     <>
-      {!isStudioPath && <Header />}
-      <main>{children}</main>
-      {!isStudioPath && <Footer />}
+      {!hideSidebar && <Header />}
+      <main className={!hideSidebar ? 'md:ml-60 pt-14 md:pt-0' : ''}>
+        {children}
+      </main>
+      {!hideSidebar && <Footer />}
     </>
   )
-} 
+}

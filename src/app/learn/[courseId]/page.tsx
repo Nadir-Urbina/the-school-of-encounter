@@ -67,22 +67,15 @@ interface ProgressMilestone {
   unlockedAt?: Date;
 }
 
-function getYouTubeEmbedUrl(url: string) {
-  // Handle different YouTube URL formats
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-  const match = url.match(regExp)
+function getEmbedUrl(videoId: string, startTime?: number | null) {
+  const isYouTube = /^[a-zA-Z0-9_-]{11}$/.test(videoId)
 
-  if (match && match[2].length === 11) {
-    // Return secure embed URL
-    return `https://www.youtube.com/embed/${match[2]}`
+  if (isYouTube) {
+    return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1${startTime ? `&start=${Math.floor(startTime)}` : ''}`
   }
 
-  // If it's already an embed URL, ensure it's secure
-  if (url.includes('/embed/')) {
-    return url.replace('http://', 'https://')
-  }
-
-  return url
+  const base = `https://player.vimeo.com/video/${videoId}?title=0&byline=0&portrait=0&dnt=1&autopause=0`
+  return startTime && startTime > 0 ? `${base}#t=${Math.floor(startTime)}s` : base
 }
 
 export default function CourseLearnPage({ 
@@ -797,10 +790,10 @@ export default function CourseLearnPage({
             {currentLesson?.videoId ? (
               <>
                 <iframe
-                  src={`https://www.youtube.com/embed/${currentLesson.videoId}?enablejsapi=1&rel=0&modestbranding=1&showinfo=0&controls=1&disablekb=1&fs=0&iv_load_policy=3${resumeTime ? `&start=${Math.floor(resumeTime)}` : ''}`}
+                  src={getEmbedUrl(currentLesson.videoId, resumeTime)}
                   className="w-full h-full"
                   title={currentLesson.title || 'Video lesson'}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
                 />
                 

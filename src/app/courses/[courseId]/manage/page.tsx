@@ -1,11 +1,12 @@
 'use client'
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, use, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { client } from '@/lib/sanity'
 import Image from 'next/image'
 import { urlFor } from '@/lib/sanity'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 interface Course {
   _id: string
@@ -53,6 +54,54 @@ export default function CourseManagePage({
   const [course, setCourse] = useState<Course | null>(null)
   const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([])
   const [loadingCourse, setLoadingCourse] = useState(true)
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailSubject, setEmailSubject] = useState('')
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const editorRef = useRef<HTMLDivElement>(null)
+
+  const execFormat = (command: string, value?: string) => {
+    document.execCommand(command, false, value)
+    editorRef.current?.focus()
+  }
+
+  const sendEmail = async () => {
+    const htmlContent = editorRef.current?.innerHTML || ''
+    if (!emailSubject.trim() || !htmlContent.trim() || htmlContent === '<br>') {
+      toast.error('Please add a subject and message body.')
+      return
+    }
+
+    setSendingEmail(true)
+    try {
+      const res = await fetch('/api/send-course-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: emailSubject,
+          htmlContent,
+          courseTitle: course?.title,
+          senderName: user?.displayName || '',
+          recipients: enrolledStudents
+            .filter(s => s.email !== 'N/A')
+            .map(s => ({ name: s.name, email: s.email }))
+        })
+      })
+
+      if (res.ok) {
+        const { sent } = await res.json()
+        toast.success(`Email sent to ${sent} student${sent !== 1 ? 's' : ''}.`)
+        setShowEmailModal(false)
+        setEmailSubject('')
+        if (editorRef.current) editorRef.current.innerHTML = ''
+      } else {
+        toast.error('Failed to send email. Please try again.')
+      }
+    } catch {
+      toast.error('Failed to send email. Please try again.')
+    } finally {
+      setSendingEmail(false)
+    }
+  }
 
   useEffect(() => {
     if (loading) return
@@ -337,9 +386,22 @@ export default function CourseManagePage({
           <div className="p-6 sm:p-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold">Enrolled Students</h2>
-              <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                {enrolledStudents.length} student{enrolledStudents.length !== 1 ? 's' : ''}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                  {enrolledStudents.length} student{enrolledStudents.length !== 1 ? 's' : ''}
+                </span>
+                {enrolledStudents.length > 0 && (
+                  <button
+                    onClick={() => setShowEmailModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Email Students
+                  </button>
+                )}
+              </div>
             </div>
             
             {enrolledStudents.length === 0 ? (
@@ -404,6 +466,121 @@ export default function CourseManagePage({
           </div>
         </div>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Email Students</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Sending to {enrolledStudents.filter(s => s.email !== 'N/A').length} student{enrolledStudents.filter(s => s.email !== 'N/A').length !== 1 ? 's' : ''} enrolled in <span className="font-medium">{course?.title}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Subject */}
+            <div className="px-6 pt-4">
+              <input
+                type="text"
+                placeholder="Subject"
+                value={emailSubject}
+                onChange={e => setEmailSubject(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Editor */}
+            <div className="px-6 pt-3 flex-1 flex flex-col min-h-0">
+              {/* Toolbar */}
+              <div className="flex items-center gap-1 px-2 py-1.5 border border-b-0 border-gray-200 rounded-t-lg bg-gray-50">
+                {[
+                  { cmd: 'bold', icon: 'B', style: 'font-bold' },
+                  { cmd: 'italic', icon: 'I', style: 'italic' },
+                  { cmd: 'underline', icon: 'U', style: 'underline' },
+                ].map(({ cmd, icon, style }) => (
+                  <button
+                    key={cmd}
+                    onMouseDown={e => { e.preventDefault(); execFormat(cmd) }}
+                    className={`w-8 h-8 text-sm ${style} text-gray-700 hover:bg-gray-200 rounded transition-colors`}
+                  >
+                    {icon}
+                  </button>
+                ))}
+                <div className="w-px h-5 bg-gray-300 mx-1" />
+                <button
+                  onMouseDown={e => { e.preventDefault(); execFormat('insertUnorderedList') }}
+                  className="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                  title="Bullet list"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                </button>
+                <button
+                  onMouseDown={e => { e.preventDefault(); execFormat('insertOrderedList') }}
+                  className="w-8 h-8 flex items-center justify-center text-gray-700 hover:bg-gray-200 rounded transition-colors"
+                  title="Numbered list"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h10M7 16h10M3 8h.01M3 12h.01M3 16h.01" />
+                  </svg>
+                </button>
+              </div>
+              <div
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                data-placeholder="Write your message here..."
+                className="flex-1 min-h-[200px] px-4 py-3 border border-gray-200 rounded-b-lg text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent overflow-y-auto
+                  empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t mt-3">
+              <button
+                onClick={() => setShowEmailModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={sendEmail}
+                disabled={sendingEmail}
+                className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                {sendingEmail ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    Send to All Students
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

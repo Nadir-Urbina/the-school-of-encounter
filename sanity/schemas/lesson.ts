@@ -10,15 +10,15 @@ export default {
     },
     {
       name: 'videoUrl',
-      title: 'YouTube Video URL',
+      title: 'Vimeo Video URL',
       type: 'url',
-      description: 'Paste the unlisted YouTube video URL here'
+      description: 'Paste the Vimeo video URL here (e.g. https://vimeo.com/123456789)'
     },
     {
       name: 'videoId',
-      title: 'YouTube Video ID',
+      title: 'Vimeo Video ID',
       type: 'string',
-      description: 'Example: if URL is https://youtu.be/abc123xyz, the ID is abc123xyz'
+      description: 'Example: if URL is https://vimeo.com/123456789, the ID is 123456789'
     },
     {
       name: 'content',

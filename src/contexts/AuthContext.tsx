@@ -11,6 +11,7 @@ interface AuthContextType {
   user: {
     uid: string
     email: string | null
+    displayName: string | null
     role?: string
   } | null
   loading: boolean
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
           role: profile?.role || 'student'
         })
         
