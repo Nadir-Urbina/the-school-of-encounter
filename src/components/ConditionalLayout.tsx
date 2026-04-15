@@ -1,7 +1,8 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import Header from '@/components/header'
+import Sidebar from '@/components/header'
+import MarketingHeader from '@/components/MarketingHeader'
 import { Footer } from '@/components/footer'
 
 export default function ConditionalLayout({
@@ -10,15 +11,28 @@ export default function ConditionalLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const hideSidebar = pathname?.startsWith('/studio') || pathname?.startsWith('/learn')
+  const isStudioOrLearn = pathname?.startsWith('/studio') || pathname?.startsWith('/learn')
+  const isHomepage = pathname === '/'
+
+  if (isStudioOrLearn) {
+    return <main>{children}</main>
+  }
+
+  if (isHomepage) {
+    return (
+      <>
+        <MarketingHeader />
+        <main className="pt-16">{children}</main>
+        <Footer />
+      </>
+    )
+  }
 
   return (
     <>
-      {!hideSidebar && <Header />}
-      <main className={!hideSidebar ? 'md:ml-60 pt-14 md:pt-0' : ''}>
-        {children}
-      </main>
-      {!hideSidebar && <Footer />}
+      <Sidebar />
+      <main className="md:ml-60 pt-14 md:pt-0">{children}</main>
+      <Footer />
     </>
   )
 }

@@ -35,13 +35,21 @@ Three roles defined in Sanity `userProfile`: `student`, `teacher`, `admin`. Role
 
 ### Routing Structure
 - `/` — public homepage
+- `/courses` — public course listing
 - `/courses/[courseId]` — public course detail
-- `/learn/[courseId]` — protected course player
+- `/courses/[courseId]/manage` — instructor course management (student list, email students)
+- `/learn/[courseId]` — course player (client-side auth-gated; enrollment checked at runtime)
 - `/auth/*` — login, signup, forgot-password
-- `/dashboard` — student dashboard (protected)
-- `/teacher-dashboard` — instructor dashboard (protected)
-- `/admin/*` — admin pages (role-checked client-side)
+- `/dashboard` — student dashboard (middleware-protected)
+- `/teacher-dashboard` — instructor dashboard (middleware-protected)
+- `/admin/*` — admin pages (role-checked client-side only, not middleware)
+- `/calendar` — public calendar
+- `/teacher-dashboard/calendar` — teacher Q&A calendar
+- `/admin/calendar`, `/admin/courses`, `/admin/users` — admin sub-pages
 - `/studio/[[...tool]]` — Sanity CMS (mounted at base path `/studio`)
+
+### Layout
+`ConditionalLayout` (`src/components/ConditionalLayout.tsx`) wraps all pages. It hides the `Header` and `Footer` on `/studio` and `/learn` routes. The desktop layout shifts content right by `md:ml-60` to accommodate the sidebar nav in `Header`.
 
 ### Data Layer
 All content lives in Sanity. Key document types:
@@ -50,6 +58,13 @@ All content lives in Sanity. Key document types:
 - `enrollment` — joins student + course with status
 - `lessonProgress` — tracks per-lesson completion and notes
 - `qaEvent` — live Q&A sessions tied to a course + instructor
+- `instructor`, `testimonial` — supporting content types
+
+Sanity schemas are defined in `sanity/schemas/` (root-level, used by the Sanity Studio config), not in `src/`. The `src/sanity/schemaTypes/index.ts` is a stub.
+
+Two Sanity clients are exported from `src/lib/sanity.ts`:
+- `client` — read-only, safe to use client-side
+- `serverClient` — write-enabled (uses `SANITY_API_TOKEN`), server-side only
 
 Server mutations go through Next.js Server Actions (`src/app/actions/`) or API routes (`src/app/api/`). The Sanity write token (`SANITY_API_TOKEN`) is server-side only.
 
@@ -60,6 +75,8 @@ Server mutations go through Next.js Server Actions (`src/app/actions/`) or API r
 - `POST /api/contact` — contact form → Resend email
 - `PUT /api/update-lesson-progress` — mark lesson complete
 - `PUT /api/update-lesson-notes` — save student notes
+- `POST /api/send-course-email` — bulk email to enrolled students via Resend (used by instructors from the manage page)
+- `GET /api/qa-events` — fetch Q&A events
 
 ## Required Environment Variables
 
@@ -95,3 +112,5 @@ RESEND_API_KEY                   # email notifications
 - ESLint is configured to allow `any` types, unused variables, unescaped entities, and empty interfaces — don't fight these rules
 - Sanity image URLs come from `cdn.sanity.io` (configured in `next.config.ts` for `next/image`)
 - Fonts: Inter (body) and Montserrat (headings) via CSS variables `--font-sans` / `--font-heading`
+- Lesson `videoId` supports both YouTube (11-char alphanumeric ID) and Vimeo (numeric ID). `getEmbedUrl` in the learn page auto-detects the platform.
+- The middleware only protects `/dashboard` and `/teacher-dashboard`. The `/learn` and `/admin` routes do client-side auth/role checks.
