@@ -236,7 +236,7 @@ export default function CoursePreviewPage({
 
           {/* Course Header Content */}
           <div className="p-6 sm:p-8 border-b">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-6">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
                   {course.title}

@@ -49,7 +49,16 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error('Login error:', err)
-      setError(err.message || 'Failed to sign in')
+      const code = err?.code
+      const friendlyErrors: Record<string, string> = {
+        'auth/invalid-credential': 'Incorrect email or password.',
+        'auth/user-not-found': 'No account found with this email.',
+        'auth/wrong-password': 'Incorrect password.',
+        'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
+        'auth/user-disabled': 'This account has been disabled.',
+        'auth/network-request-failed': 'Network error. Check your connection and try again.',
+      }
+      setError(friendlyErrors[code] ?? 'Failed to sign in. Please try again.')
       setLoading(false)
     }
   }
