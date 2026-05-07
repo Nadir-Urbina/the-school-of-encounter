@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { updateUserBio } from '@/lib/user'
+import { updateUserBio } from '@/app/actions/user'
 import { updateUserPassword } from '@/lib/firebase'
 
 interface ProfileManagementProps {

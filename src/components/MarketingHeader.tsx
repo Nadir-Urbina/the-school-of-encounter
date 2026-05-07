@@ -15,7 +15,7 @@ export default function MarketingHeader() {
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
           <Link href="/courses" className="hover:text-gray-900 transition-colors">Courses</Link>
-          <Link href="/calendar" className="hover:text-gray-900 transition-colors">Q&amp;A Calendar</Link>
+          {user && <Link href="/calendar" className="hover:text-gray-900 transition-colors">Q&amp;A Calendar</Link>}
           <Link href="/faq" className="hover:text-gray-900 transition-colors">FAQ</Link>
         </nav>
 

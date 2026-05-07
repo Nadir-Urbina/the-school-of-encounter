@@ -1,11 +1,10 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
+import { onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider, getAdditionalUserInfo } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { getUserProfile } from '@/lib/user'
 import Cookies from 'js-cookie'
-import { client } from '@/lib/sanity'
-import { useRouter } from 'next/navigation'
+import { createSanityUserProfile } from '@/app/actions/user'
 
 interface AuthContextType {
   user: {
@@ -16,34 +15,36 @@ interface AuthContextType {
   } | null
   loading: boolean
   logout: () => Promise<void>
-  signInWithGoogle: () => Promise<void>
+  signInWithGoogle: () => Promise<{ isNewUser: boolean }>
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   logout: async () => {},
-  signInWithGoogle: async () => {}
+  signInWithGoogle: async () => ({ isNewUser: false })
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthContextType['user']>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Get the user profile from Sanity to include the role
-        const profile = await getUserProfile(firebaseUser.uid)
-        
+        let role = 'student'
+        try {
+          const profile = await getUserProfile(firebaseUser.uid)
+          role = profile?.role || 'student'
+        } catch {
+          // profile fetch failed; default role is fine, user is still authenticated
+        }
         setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
-          role: profile?.role || 'student'
+          role
         })
-        
         Cookies.set('user', 'true', { secure: true })
       } else {
         setUser(null)
@@ -65,38 +66,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<{ isNewUser: boolean }> => {
     try {
       const provider = new GoogleAuthProvider()
       const result = await signInWithPopup(auth, provider)
-      const user = result.user
-      
-      console.log('Google sign in successful, checking Sanity profile...')
+      const firebaseUser = result.user
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false
 
-      // Check if user profile exists in Sanity
-      const profile = await client.fetch(
-        `*[_type == "userProfile" && firebaseUID == $uid][0]`,
-        { uid: user.uid }
-      )
-      
-      console.log('Existing profile:', profile)
+      await createSanityUserProfile({
+        firebaseUID: firebaseUser.uid,
+        name: firebaseUser.displayName || '',
+        email: firebaseUser.email || '',
+        role: 'student'
+      })
 
-      if (!profile) {
-        console.log('Creating new user profile in Sanity...')
-        // Create new user profile in Sanity
-        await client.create({
-          _type: 'userProfile',
-          firebaseUID: user.uid,
-          name: user.displayName || '',
-          email: user.email || '',
-          role: 'student', // default role
-          enrolledCourses: [] // Initialize empty enrolled courses array
-        })
-        console.log('Sanity profile created')
-      }
+      return { isNewUser }
     } catch (error) {
       console.error('Error in Google sign in:', error)
-      throw error // Re-throw to handle in the UI
+      throw error
     }
   }
 

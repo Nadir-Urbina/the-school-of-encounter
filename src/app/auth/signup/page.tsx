@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
@@ -23,7 +23,13 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const router = useRouter()
-  const { signInWithGoogle } = useAuth()
+  const { signInWithGoogle, user } = useAuth()
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,8 +105,17 @@ export default function RegisterPage() {
     }))
   }
 
-  const handleGoogleSignIn = () => {
-    // Implementation of Google Sign In
+  const handleGoogleSignIn = async () => {
+    setError('')
+    try {
+      const { isNewUser } = await signInWithGoogle()
+      if (!isNewUser) {
+        setError('You already have an account. Signing you in...')
+      }
+      // redirect is handled by the useEffect watching user state
+    } catch (error) {
+      setError('Failed to sign in with Google')
+    }
   }
 
   const togglePasswordVisibility = () => {
@@ -139,16 +154,14 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <div style={{ display: 'none' }}>
-          <GoogleSignInButton onClick={handleGoogleSignIn} />
-        </div>
+        <GoogleSignInButton onClick={handleGoogleSignIn} label="Sign up with Google" />
 
-        <div className="relative" style={{ display: 'none' }}>
+        <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+            <span className="px-2 bg-gray-50 text-gray-500">Or continue with email</span>
           </div>
         </div>
 

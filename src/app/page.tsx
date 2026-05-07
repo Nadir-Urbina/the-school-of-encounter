@@ -78,10 +78,10 @@ interface FeatureItem {
 
 export const metadata = {
   title: "The School of Encounter - Transform Your Spiritual Journey",
-  description: "Join thousands of students in transformative spiritual education. Expert-led courses, live Q&A sessions, and a supportive community await you.",
+  description: "Join hundreds of students in transformative spiritual education. Expert-led courses, live Q&A sessions, and a supportive community await you.",
   openGraph: {
     title: "The School of Encounter - Transform Your Spiritual Journey",
-    description: "Join thousands of students in transformative spiritual education. Expert-led courses, live Q&A sessions, and a supportive community await you.",
+    description: "Join hundreds of students in transformative spiritual education. Expert-led courses, live Q&A sessions, and a supportive community await you.",
     url: "https://theschoolofencounter.com/",
     siteName: "The School of Encounter",
     images: [
@@ -98,7 +98,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title: "The School of Encounter - Transform Your Spiritual Journey",
-    description: "Join thousands of students in transformative spiritual education. Expert-led courses, live Q&A sessions, and a supportive community await you.",
+    description: "Join hundreds of students in transformative spiritual education. Expert-led courses, live Q&A sessions, and a supportive community await you.",
     images: ["/HERO%20Image%20TSOE.png"],
   },
 }
@@ -303,7 +303,7 @@ export default async function Home() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl mx-auto">
             {courses.map((course) => (
               <CourseCard key={course._id} course={course} />
             ))}
@@ -493,7 +493,7 @@ export default async function Home() {
             Ready to Transform Your Life?
           </h2>
           <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            Join thousands of students already experiencing breakthrough in their spiritual journey
+            Join hundreds of students already experiencing breakthrough in their spiritual journey
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
@@ -515,9 +515,6 @@ export default async function Home() {
             </Link>
           </div>
           
-          <p className="text-blue-200 text-lg">
-            Start your journey today • No commitment required • Cancel anytime
-          </p>
         </div>
       </section>
 

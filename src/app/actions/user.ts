@@ -75,4 +75,21 @@ export async function createSanityUserProfile(userData: {
     
     throw new Error('Unknown error creating Sanity profile')
   }
-} 
+}
+
+export async function updateUserBio(firebaseUID: string, bio: string) {
+  if (!process.env.SANITY_API_TOKEN) {
+    throw new Error('Sanity token is not configured')
+  }
+
+  const profile = await client.fetch(
+    `*[_type == "userProfile" && firebaseUID == $uid][0]{ _id }`,
+    { uid: firebaseUID }
+  )
+
+  if (!profile?._id) {
+    throw new Error('User profile not found')
+  }
+
+  return client.patch(profile._id).set({ bio }).commit()
+}

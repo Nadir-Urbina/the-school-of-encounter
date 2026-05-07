@@ -13,17 +13,23 @@ export default function ConditionalLayout({
   const pathname = usePathname()
   const isStudioOrLearn = pathname?.startsWith('/studio') || pathname?.startsWith('/learn')
   const isHomepage = pathname === '/'
+  const isPublicPage =
+    isHomepage ||
+    pathname?.startsWith('/auth') ||
+    pathname?.startsWith('/courses') ||
+    pathname === '/faq' ||
+    pathname === '/calendar'
 
   if (isStudioOrLearn) {
     return <main>{children}</main>
   }
 
-  if (isHomepage) {
+  if (isPublicPage) {
     return (
       <>
         <MarketingHeader />
         <main className="pt-16">{children}</main>
-        <Footer />
+        {isHomepage && <Footer />}
       </>
     )
   }

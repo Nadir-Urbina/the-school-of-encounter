@@ -3,122 +3,19 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { getUserProfile } from '@/lib/user'
+import { createSanityUserProfile } from '@/app/actions/user'
 import Image from 'next/image'
 import { urlFor } from '@/lib/sanity'
 import Link from 'next/link'
-import { client } from '@/lib/sanity'
 import { loadStripe } from '@stripe/stripe-js'
 import ProfileManagement from '@/components/ProfileManagement'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 async function getUserCourses(userId: string) {
-  // First get the user's Sanity ID
-  const userDoc = await client.fetch(`
-    *[_type == "userProfile" && firebaseUID == $userId][0]._id
-  `, { userId })
-
-  // Then get the enrolled courses through enrollments
-  const enrolledCoursesData = await client.fetch(`
-    *[_type == "enrollment" && student._ref == $userDocId] {
-      "course": course-> {
-        _id,
-        title,
-        description,
-        courseImage,
-        "slug": slug.current,
-        enrolledAt,
-        status
-      }
-    }
-  `, { userDocId: userDoc })
-
-  // Extract just the course data and add enrollment info
-  const enrolledCourses = enrolledCoursesData.map((enrollment: any) => ({
-    ...enrollment.course,
-    enrolledAt: enrollment.enrolledAt,
-    status: enrollment.status
-  }))
-
-  // Calculate progress for each course
-  const coursesWithProgress = await Promise.all(
-    enrolledCourses.map(async (course: any) => {
-      try {
-        // Get the full course structure with expanded modules and lessons
-        const courseDetails = await client.fetch(`
-          *[_type == "course" && _id == $courseId][0] {
-            _id,
-            "modules": modules[]-> {
-              _id,
-              "lessons": lessons[]->
-            }
-          }
-        `, { courseId: course._id })
-
-        // Calculate total lessons directly from the modules
-        let totalLessons = 0
-        if (courseDetails?.modules) {
-          courseDetails.modules.forEach((module: any) => {
-            totalLessons += module.lessons ? module.lessons.length : 0
-          })
-        }
-
-        // Get completed lessons count
-        const completedLessons = await client.fetch(`
-          count(*[
-            _type == "lessonProgress" && 
-            user._ref == $userDoc && 
-            course._ref == $courseId && 
-            completed == true
-          ])
-        `, { 
-          userDoc: userDoc, 
-          courseId: course._id 
-        })
-
-        const progress = totalLessons > 0 
-          ? Math.round((completedLessons / totalLessons) * 100) 
-          : 0
-
-        return {
-          ...course,
-          progress,
-          completedLessons,
-          totalLessons
-        }
-      } catch (err) {
-        console.error('Error calculating progress for course:', course._id, err)
-        return {
-          ...course,
-          progress: 0,
-          completedLessons: 0,
-          totalLessons: 0
-        }
-      }
-    })
-  )
-
-  // Then get all available courses
-  const allCourses = await client.fetch(`
-    *[_type == "course"] {
-      _id,
-      title,
-      description,
-      courseImage,
-      "price": price,
-      "slug": slug.current,
-      publishedAt
-    }
-  `)
-
-  // Filter out enrolled courses from available courses
-  const enrolledIds = coursesWithProgress.map((course: { _id: string }) => course._id)
-  const availableCourses = allCourses.filter((course: { _id: string }) => !enrolledIds.includes(course._id))
-
-  return {
-    enrolledCourses: coursesWithProgress,
-    availableCourses
-  }
+  const response = await fetch(`/api/user-courses?uid=${encodeURIComponent(userId)}`)
+  if (!response.ok) return { enrolledCourses: [], availableCourses: [] }
+  return response.json()
 }
 
 // Helper function to format dates
@@ -172,7 +69,7 @@ export default function DashboardPage() {
 
           let profile = null
           let attempts = 0
-          const maxAttempts = 3
+          const maxAttempts = 4
 
           while (!profile && attempts < maxAttempts) {
             profile = await getUserProfile(user.uid)
@@ -180,6 +77,22 @@ export default function DashboardPage() {
               await new Promise(resolve => setTimeout(resolve, 1000))
             }
             attempts++
+          }
+
+          // Safety net for Google sign-in: if profile still missing, create it now
+          if (!profile && user.email) {
+            try {
+              await createSanityUserProfile({
+                firebaseUID: user.uid,
+                name: user.displayName || '',
+                email: user.email,
+                role: 'student'
+              })
+              await new Promise(resolve => setTimeout(resolve, 1000))
+              profile = await getUserProfile(user.uid)
+            } catch {
+              // creation also failed; will show error below
+            }
           }
 
           if (profile) {
@@ -388,7 +301,7 @@ export default function DashboardPage() {
               <p>Loading your courses...</p>
             </div>
           ) : enrolledCourses.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
               {enrolledCourses.map((course) => (
                 <div 
                   key={course._id} 
@@ -469,7 +382,7 @@ export default function DashboardPage() {
               <p>Loading courses...</p>
             </div>
           ) : availableCourses.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
               {availableCourses.map((course) => (
                 <div 
                   key={course._id} 

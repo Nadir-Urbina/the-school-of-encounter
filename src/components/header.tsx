@@ -42,11 +42,11 @@ export default function Sidebar() {
 
   const publicLinks: NavItem[] = [
     { href: '/courses', label: 'Courses', icon: <BookOpen size={18} /> },
-    { href: '/calendar', label: 'Q&A Calendar', icon: <Calendar size={18} /> },
   ]
 
   const studentLinks: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+    { href: '/calendar', label: 'Q&A Calendar', icon: <Calendar size={18} /> },
   ]
 
   const adminLinks: NavItem[] = [
